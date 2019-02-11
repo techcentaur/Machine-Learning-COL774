@@ -82,7 +82,7 @@ class LinearRegressionWithLocalWeights:
         x=np.linspace(min(data.Xlist), max(data.Xlist), data.samples)
         y=list(t)[1]*x+list(t)[0]
 
-        foot.plot(x, y, label="Hypothesis function learned",color ='b')
+        foot.plot(x, y, label="Hypothesis function learned", color ='b')
 
         plt.xlabel('x - axis')
         plt.ylabel('y - axis')

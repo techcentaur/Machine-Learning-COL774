@@ -1,86 +1,142 @@
+import math
+import csv
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt 
 import numpy as np 
 import pandas as pd
 from scipy.special import expit
-import csv
+
+
+class Datafiles:
+    def __init__(self, fileX, fileY):
+        self.fileX = fileX
+        self.fileY = fileY
+        self.process()
+
+    def process(self):
+        # Read from CSV file
+        csvfileX=open(self.fileX, 'r')
+        csvfileY=open(self.fileY, 'r')
+
+        X = list(csv.reader(csvfileX))
+        Y = list(csv.reader(csvfileY))
+
+        # Convert list format to float format
+        samples = len(X)
+        X1 = []
+        Y1 = []
+        for i in range(samples):
+            X1.append([float(X[i][0]), float(X[i][1])])
+            Y1.append(float(Y[i][0]))
+
+        X = X1
+        Ylist = Y1
+
+        # Normalize the data (X in R^2)
+        meanX = [0, 0]
+        varianceX = [0, 0]
+
+        for i in range(samples):
+            for j in range(len(meanX)):
+                meanX[j] += (X[i][j])
+        for j in range(len(meanX)):
+            meanX[j] /= samples
+
+        for i in range(samples):
+            for j in range(len(meanX)):
+                varianceX[j] += (X[i][j] - meanX[j])**2
+        for j in range(len(meanX)):
+            varianceX[j] /= samples
+            varianceX[j] = math.sqrt(varianceX[j])
+
+        for i in range(samples):
+            for j in range(len(meanX)):
+                X[i][j] = (X[i][j] - meanX[j])/varianceX[j]
+
+        print(meanX)
+        print(varianceX)
+
+        partition = {1: {'x': [], 'y': []}, 0: {'x':[], 'y':[]}}
+        for i in range(samples):
+            if Ylist[i]:
+                partition[0]['x'].append(float(X[i][0]))
+                partition[0]['y'].append(float(X[i][1]))
+            else:
+                partition[1]['x'].append(float(X[i][0]))
+                partition[1]['y'].append(float(X[i][1]))
+
+
+        X = np.array(X)
+        # Insert the X0 term (all ones: constant)
+        X = np.insert(X, 0, 1.0, axis=1)
+        Y = np.array(Ylist)
+
+        self.X = X
+        self.Y = Y 
+        self.partition = partition
+        self.samples = samples
+        self.features = len(meanX)
+
+data = Datafiles("./data/logisticX.csv", "./data/logisticY.csv")
 
 def sigmoid(z):
-    """return the sigmoid value of z(can be a matrix)"""
     return 1/(1 + np.exp(-z))
 
-
-def get_gradient(X, Y, thetas):
-    X_sig = sigmoid(np.matmul(X.T,thetas))
-    return np.dot(X.T, (Y - X_sig))
-
-def get_hessian(X, Y, thetas):
-    m = X.shape[0]
-    n = X.shape[1]-1
-
-    hessian = np.zeros((n+1, n+1))
-    htheta = np.matmul(X, thetas.T)
-    print(htheta.shape)
-    for i in range(m):
-        feats = htheta[i]
-        print(feats)
-        # print(type(np.outer(X[i].T,X[i])))
-        hessian = hessian - (np.outer(X[i].T,X[i]))*((sigmoid(feats)*(1-sigmoid(feats))))
-
-    return hessian
+def sigmoid_derivative(z):
+    return sigmoid(z)*(1-sigmoid(z))
 
 
-def newtons_method(X, Y):
-    max_iter = 1
-    threshold = 1.0e-4
+threshold = 0.00001
+_iter = 0
+theta = np.array([0, 0, 0])
 
-    m = X.shape[0]  # samples
-    n = X.shape[1]-1 # features
-    
-    thetas = np.zeros([n+1,])
+while True:
+    htheta = np.matmul(data.X, theta)
+    gtheta = sigmoid(htheta)
+    gradient = np.dot(data.X.T, (data.Y - gtheta))
 
-    iteration = 0
-    while True:
-        gradient = get_gradient(X, Y, thetas)
-        print(iteration, " ", thetas)
+    # Calculate Hessian
+    H = np.zeros((data.features+1, data.features+1))
+    for i in range(data.samples):
+        H = H - (sigmoid_derivative(htheta[i]))*(np.outer(data.X[i].T, data.X[i]))
+    _iter += 1
 
-        #Hessian matrix
-        H = get_hessian(X, Y, thetas)
+    theta_old = theta
+    # Update theta
 
-        thetas_old = thetas
-        print((np.asmatrix(H)).I.shape)
-        print(gradient.shape)
-        # update theta as: theta = theta - hessian_inverse * gradient
-        thetas = thetas - np.array((np.asmatrix(H)).I @ gradient)
-        iteration += 1
-        converged = np.linalg.norm(thetas - thetas_old)
-        if(converged < threshold or iteration > max_iter):
-            break
-    
+    theta = theta - np.matmul(np.linalg.inv(H), gradient)
 
-    # print(thetas)
-    # print(i)
-    print("[*] Logistic Regression by Newton's Method!")
+    # Check if converged
+    if(np.linalg.norm(theta - theta_old) < threshold):
+        break;
+
+print("[*] Number of iterations {i}".format(i=_iter))
+print(theta)
 
 
+def plot_theta(data, theta):
+    fig = plt.figure(figsize=(12, 10))
+    foot = fig.add_subplot(1,1,1)
+
+    foot.scatter(data.partition[0]['x'], data.partition[0]['y'], label="y=0 | Training Data", color= "red", marker= ".")
+    foot.scatter(data.partition[1]['x'], data.partition[1]['y'], label="y=1 | Training Data", color= "green", marker= "+")
+
+    x=np.linspace(min(min(data.partition[0]['x']), min(data.partition[1]['x'])), max(max(data.partition[0]['x']), max(data.partition[0]['x'])), data.samples)
+    y = -1 * (theta[1]*x + theta[0])/theta[2]
+
+    foot.plot(x, y, label="Decision boundary", color ='blue')
+
+    plt.xlabel('x - axis')
+    plt.ylabel('y - axis')
+    # plt.ylim(bottom=0)
+
+    plt.legend()
+    plt.title('Q3(a) - Logistic Regression: Using Newton\'s Method')
+
+    plt.savefig('./graphs/logistic_regression_newton_method.png')
 
 
-def read_files(filenameX, filenameY):
-    csvfile=open("./data/logisticX.csv", 'r')
-    x = list(csv.reader(csvfile))
-    csvfile=open("./data/logisticY.csv", 'r')
-    y = list(csv.reader(csvfile))
+plot_theta(data, theta)
 
-    x_=[]
-    y_=[]
-    for i in range(len(x)):
-        x_.append([float(x[i][0]),float(x[i][1])])
-        y_.append(float(y[i][0]))
-    x = np.array(x_)
-    y = np.array(y_)
-    x = np.insert(x, 0, 1.0, axis=1)
 
-    return x, y
-        
-if __name__ == '__main__':
-    X, y = read_files("./data/logisticX.csv", "./data/logisticY.csv")
-    print(X.shape, " ", y.shape)
-    newtons_method(X, y)
