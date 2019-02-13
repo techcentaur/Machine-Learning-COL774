@@ -144,10 +144,8 @@ class Figures:
 
         self.plot_on_same = plot_on_same
         if self.plot_on_same:
-            if not which:
-                self.plot_GDA_with_same_sigma(data)
-            else:
-                self.plot_GDA_with_different_sigma(data, name="_with_linear_line")
+            self.plot_GDA_with_same_sigma(data)
+            self.plot_GDA_with_different_sigma(data, name="_with_linear_line")
 
 
     def plot_GDA_with_same_sigma(self, data):
@@ -197,7 +195,7 @@ class Figures:
             # plt.ylim(bottom=0)
 
             plt.legend()
-            plt.title('Q4(c) - GDA: Covariance1 = Covariance2 | Linear & Quadratic Separation Line')
+            plt.title('Q4(c) - GDA: Covariance1 != Covariance2 | Linear & Quadratic Separation Line')
 
         if not self.plot_on_same:
             plt.savefig('./graphs/gda_same_covariance_linear_line.png')
@@ -250,5 +248,5 @@ if __name__ == '__main__':
     import sys
 
     data = Datafiles(sys.argv[1], sys.argv[2])
-    fig = Figures(data, int(sys.argv[3]), False)
+    fig = Figures(data, int(sys.argv[3]), True)
 

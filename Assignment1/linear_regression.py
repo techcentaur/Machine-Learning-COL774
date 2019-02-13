@@ -92,6 +92,8 @@ def plot_thetas(data, t, rate):
 
     plt.savefig('./graphs/linear_regression_hypothesis_function_plot_{}.png'.format(rate))
 
+    print("[*] Linear regression hypothesis function saved.\n")
+
 
 def plot_error_function_in_gif(data, t, it, axis, rate):
     if not os.path.exists("./graphs/error_function_{}".format(rate)):
@@ -118,7 +120,7 @@ def plot_contour_values(x1, x2, function_values, cost_theta, rate):
     plt.ylabel('y - axis | theta-1')
     plt.title('Contour graph: Eta value {}'.format(rate))
     # plt.ylim(bottom=0)
-    print("A")
+
     for i in range(len(cost_theta)):
         plt.contour(x1, x2, function_values, 50)
         plt.scatter(cost_theta[i][1][0], cost_theta[i][1][1])
@@ -144,7 +146,7 @@ class LinearRegression:
     def __init__(self, data, rate):
         self.threshold = 1e-12
         self.learning_rate = rate
-        # self.batch_gradient_descent(data)
+        self.batch_gradient_descent(data)
         self.error_function_with_params(data)
 
     def cost(self, t):
@@ -180,8 +182,7 @@ class LinearRegression:
 
 
         plot_thetas(data, theta, self.learning_rate)
-        print("{:=^70}\n".format(' Part(b) '))
-        print('[*] Learned Hypothesis Function Plotted!')
+        print("{:=^70}\n".format(' Part(c+) '))
         self.theta = theta
 
 
@@ -221,13 +222,13 @@ class LinearRegression:
             
             cost_theta.append((self.cost(theta), theta))
             
-            # plot_error_function_in_gif(data, theta, i, axis, self.learning_rate)
+            plot_error_function_in_gif(data, theta, i, axis, self.learning_rate)
             if(abs(self.cost(theta_old) - self.cost(theta)) < self.threshold):
                 break
             i+=1
 
-        # f.plot_contour_values(self, x1, x2, function_values, cost_theta)
-        plot_contour_values_plot_once(x1, x2, function_values, cost_theta, self.learning_rate)
+        plot_contour_values(x1, x2, function_values, cost_theta, self.learning_rate)
+        # plot_contour_values_plot_once(x1, x2, function_values, cost_theta, self.learning_rate)
 
 def create_animation(rootdir, delay):
     images,image_file_names = [],[]
@@ -251,6 +252,7 @@ def create_animation(rootdir, delay):
             images.append(imageio.imread(file_path))
     # the duration is the time spent on each image (1/duration is frame rate)
     n = rootdir.split("/")[-1]
+    print("[*] Saving animation for {}".format(n))
     imageio.mimsave("./graphs/{}.gif".format(n), images,'GIF',duration=frame_length)
 
 
@@ -262,6 +264,7 @@ if __name__ == '__main__':
     lr = LinearRegression(data, float(sys.argv[3]))
 
     # create_animation("./graphs/linear_theta_lines", float(sys.argv[4]))
-    # create_animation("./graphs/error_function", float(sys.argv[4]))
-    # create_animation("./graphs/contour_values", float(sys.argv[4]))
+    create_animation("./graphs/error_function_{}".format(sys.argv[3]), float(sys.argv[4]))
+    create_animation("./graphs/contour_values_{}".format(sys.argv[3]), float(sys.argv[4]))
 
+    print("[*] Part of the journey is the end!")
