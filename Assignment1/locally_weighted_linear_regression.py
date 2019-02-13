@@ -96,7 +96,7 @@ class LinearRegressionWithLocalWeights:
     # Part (a)
     def draw_unweighted_linear_regression(self, data):
         theta = np.dot(np.dot(np.linalg.inv(np.dot(data.X.T, data.X)), np.transpose(data.X)), data.Y)
-        # print("[*] Theta Values: ", theta)
+        print("[*] Theta Values: ", theta)
         self.plot_thetas(data, theta)
 
     # Part (b)
@@ -139,6 +139,8 @@ class LinearRegressionWithLocalWeights:
         return [x_val, y_val]
 
 if __name__ == '__main__':
-    data = Datafiles("./data/weightedX.csv", "./data/weightedY.csv")
-    tau_list = [0.1, 0.3, 2, 10]
+    import sys
+
+    data = Datafiles(sys.argv[1], sys.argv[2])
+    tau_list = [float(sys.argv[3])]
     lr = LinearRegressionWithLocalWeights(data, tau_list, True)

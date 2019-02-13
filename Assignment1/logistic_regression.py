@@ -54,8 +54,8 @@ class Datafiles:
             for j in range(len(meanX)):
                 X[i][j] = (X[i][j] - meanX[j])/varianceX[j]
 
-        print(meanX)
-        print(varianceX)
+        print("[*] Mean: ", meanX)
+        print("[*] Variance: ", varianceX)
 
         partition = {1: {'x': [], 'y': []}, 0: {'x':[], 'y':[]}}
         for i in range(samples):
@@ -78,41 +78,12 @@ class Datafiles:
         self.samples = samples
         self.features = len(meanX)
 
-data = Datafiles("./data/logisticX.csv", "./data/logisticY.csv")
 
 def sigmoid(z):
     return 1/(1 + np.exp(-z))
 
 def sigmoid_derivative(z):
     return sigmoid(z)*(1-sigmoid(z))
-
-
-threshold = 0.00001
-_iter = 0
-theta = np.array([0, 0, 0])
-
-while True:
-    htheta = np.matmul(data.X, theta)
-    gtheta = sigmoid(htheta)
-    gradient = np.dot(data.X.T, (data.Y - gtheta))
-
-    # Calculate Hessian
-    H = np.zeros((data.features+1, data.features+1))
-    for i in range(data.samples):
-        H = H - (sigmoid_derivative(htheta[i]))*(np.outer(data.X[i].T, data.X[i]))
-    _iter += 1
-
-    theta_old = theta
-    # Update theta
-
-    theta = theta - np.matmul(np.linalg.inv(H), gradient)
-
-    # Check if converged
-    if(np.linalg.norm(theta - theta_old) < threshold):
-        break;
-
-print("[*] Number of iterations {i}".format(i=_iter))
-print(theta)
 
 
 def plot_theta(data, theta):
@@ -122,7 +93,7 @@ def plot_theta(data, theta):
     foot.scatter(data.partition[0]['x'], data.partition[0]['y'], label="y=0 | Training Data", color= "red", marker= ".")
     foot.scatter(data.partition[1]['x'], data.partition[1]['y'], label="y=1 | Training Data", color= "green", marker= "+")
 
-    x=np.linspace(min(min(data.partition[0]['x']), min(data.partition[1]['x'])), max(max(data.partition[0]['x']), max(data.partition[0]['x'])), data.samples)
+    x=np.linspace(min(min(data.partition[0]['x']), min(data.partition[1]['x'])), max(max(data.partition[0]['x']), max(data.partition[1]['x'])), data.samples)
     y = -1 * (theta[1]*x + theta[0])/theta[2]
 
     foot.plot(x, y, label="Decision boundary", color ='blue')
@@ -137,6 +108,36 @@ def plot_theta(data, theta):
     plt.savefig('./graphs/logistic_regression_newton_method.png')
 
 
-plot_theta(data, theta)
 
 
+if __name__ == '__main__':
+    import sys
+
+    data = Datafiles(sys.argv[1], sys.argv[2])
+    threshold = 0.00001
+
+    _iter = 0
+    theta = np.array([0, 0, 0])
+
+    while True:
+        htheta = data.X @ theta
+        gtheta = sigmoid(htheta)
+        gradient = np.dot(data.X.T, (data.Y - gtheta))
+
+        # Calculate Hessian
+        H = np.zeros((data.features+1, data.features+1))
+        for i in range(data.samples):
+            H = H - (sigmoid_derivative(htheta[i]))*(np.outer(data.X[i].T, data.X[i]))
+        _iter += 1
+
+        theta_old = theta
+
+        # Update theta
+        theta = theta - (np.linalg.inv(H) @ gradient)
+
+        # Check if converged
+        if(np.linalg.norm(theta - theta_old) < threshold):
+            break;
+    print("[*] Number of iterations {i}".format(i=_iter))
+    print(theta)
+    plot_theta(data, theta)
