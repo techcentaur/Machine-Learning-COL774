@@ -5,6 +5,7 @@ from random import randint
 
 from preprocessing import (count_frequency, Preprocess)
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import f1_score
 
 import matplotlib
 matplotlib.use('Agg')
@@ -147,6 +148,13 @@ class NaiveBayes:
 		if self.verbose:
 			print("[>] Saving confusion matrix as confusion_matrix_{}.png".format(str(num)))
 
+	def f1_score(self, actual_y, predicted_y):
+		sc = f1_score(actual_y, predicted_y, average=None)
+		print("[.] Score per Class: {}".format(sc))
+
+		sc = (f1_score(actual_y, predicted_y, average='macro'))
+		print("[.] Macro Average Score: {}".format(sc))
+
 
 def main(verbose):
 	# create instance of Preprocess of training set
@@ -165,10 +173,13 @@ def main(verbose):
 	# get accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == data["test"]["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
+	print("[*] Test Error Rate: {}\n".format(1-accuracy))
 	
 	# draw confusion matrix
 	model.draw_confusion_matrix(data["test"]["label"], predicted_labels, num=3)
-	
+	model.f1_score(data["test"]["label"], predicted_labels)	
+
+
 
 if __name__ == '__main__':
 	main(False)
