@@ -127,7 +127,7 @@ class NaiveBayes:
 
 		return predicted_labels
 
-	def draw_confusion_matrix(self, actual_y, predicted_y):
+	def draw_confusion_matrix(self, actual_y, predicted_y, num=1):
 		cm = confusion_matrix(actual_y, predicted_y)
 
 		fig, ax = plt.subplots()
@@ -142,10 +142,10 @@ class NaiveBayes:
 		ax.yaxis.set_ticklabels([str(i) for i in range(1, 6)]);
 
 		plt.show(block=False)
-		plt.savefig('./confusion_matrix.png')
+		plt.savefig('./confusion_matrix_{}.png'.format(str(num)))
 
 		if self.verbose:
-			print("[>] Saving confusion matrix as confusion_matrix.png")
+			print("[>] Saving confusion matrix as confusion_matrix_{}.png".format(str(num)))
 
 
 def main(verbose):
@@ -167,9 +167,8 @@ def main(verbose):
 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
 	
 	# draw confusion matrix
-	model.draw_confusion_matrix(data["test"]["label"], predicted_labels)
+	model.draw_confusion_matrix(data["test"]["label"], predicted_labels, num=2)
 	
-
 
 if __name__ == '__main__':
 	main(False)

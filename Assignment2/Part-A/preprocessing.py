@@ -3,10 +3,12 @@ import ast
 import json
 import pprint
 
+import nltk
 from string import punctuation
-from nltk import word_tokenize
+from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer 
 from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
 
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
@@ -14,6 +16,7 @@ class Preprocess:
 		self.verbose = verbose
 		self.stem = stem
 		self.stopwords = stopwords
+		self.feature_technique = "bigram"
 
 		with open(file_path) as f:
 			raw_data = f.readlines()
@@ -68,16 +71,41 @@ class Preprocess:
 		self.data = data
 
 	def normalise_data(self, text):
-		"""normalise a give string"""
+		"""Given a string convert into tokens based on some feature extraction"""
 
-		text = self.apostrophe_normalisation(text)
-		tokens = self.punctuation_remove(word_tokenize(text))
-		tokens = [x.lower() for x in tokens]
-		if self.stopwords:
-			tokens = self.stopwords_removal(tokens)
-		if self.stem:
-			tokens = self.stemming(tokens)
+		if self.feature_technique is 'word':
+			# Feature: Only words
 
+			text = self.apostrophe_normalisation(text)
+			tokens = self.punctuation_remove(word_tokenize(text))
+			tokens = [x.lower() for x in tokens]
+			if self.stopwords:
+				tokens = self.stopwords_removal(tokens)
+			if self.stem:
+				tokens = self.stemming(tokens)
+			return tokens
+		elif self.feature_technique is 'bigram':
+			# Feature: Words + Bigrams
+			text = self.apostrophe_normalisation(text)
+			tokens = self.punctuation_remove(word_tokenize(text))
+			tokens = [x.lower() for x in tokens]
+
+			# Is stopwords removel good in bigram?
+			if self.stopwords:
+				tokens = self.stopwords_removal(tokens)
+			if self.stem:
+				tokens = self.lemmatizer(tokens)
+
+			bigrms = list(nltk.bigrams(tokens))
+			tokens = tokens + [' '.join([x, y]) for (x,y) in bigrms]
+
+			return tokens
+
+	def lemmatizer(self, tokens):
+		"""HMB while I lemmatize tokens with nltk"""
+
+		lmtzr = WordNetLemmatizer()
+		tokens = [lmtzr.lemmatize(tok) for tok in tokens]
 		return tokens
 
 	def apostrophe_normalisation(self, text):
