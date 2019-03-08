@@ -1,5 +1,6 @@
 import re
 import math
+
 from random import randint
 
 from preprocessing import (count_frequency, Preprocess)
@@ -24,12 +25,13 @@ class NaiveBayes:
 		self.verbose = verbose
 
 	def fit(self, data):
+
 		X = data["text"]
 		Y = data["label"]
 		m = len(X)
 
 		if self.verbose:
-			print("[>] Number of training examples: {}".format(m))
+			print("\n[>] Starting training with {} examples!".format(m))
 
 		for label in Y:
 			self.labels[str(label)] += 1
@@ -49,13 +51,14 @@ class NaiveBayes:
 				self.class_words[str(y)][word] += count
 
 		if self.verbose:
-			print("\n[#] Training complete!\n")
+			print("[#] Training complete!\n")
 
 
-	def predict(self, test_data, text_normalised=False):
+	def predict(self, data, text_normalised=False):
+		test_data = data["text"]
 
 		if self.verbose:
-			print("[>] Predicting values!")
+			print("\n[>] Starting the testing with {} examples!".format(len(test_data)))
 
 		predicted_labels = []
 
@@ -75,7 +78,7 @@ class NaiveBayes:
 				# Add Laplace smoothing here
 				for key in self.class_words:
 					# sum 1 in numerator; 5(no of cats) in denominator
-					log_scores[key] = math.log((self.class_words[key].get(word, 0.0) + 1)/(len(self.class_words[key]) + len(self.vocabulary)))
+					log_scores[key] = math.log((self.class_words[key].get(word, 0.0) + 1)/(len(self.class_words[key]) + 5))
 					score[key] += log_scores[key]
 		
 			# add class prior probs in log space
@@ -85,9 +88,14 @@ class NaiveBayes:
 			prediction = max(score, key=score.get)
 			predicted_labels.append(int(prediction))
 
+		if self.verbose:
+			print("[#] Testing complete!\n")
+
 		return predicted_labels
 
 	def predict_random(self, test_data, text_normalised=False):
+		test_data = test_data["text"]
+
 		if self.verbose:
 			print("[!] Predicting randomly!")
 
@@ -100,6 +108,8 @@ class NaiveBayes:
 		return predicted_labels
 
 	def predict_majority(self, test_data, text_normalised=False):
+		test_data = test_data["text"]
+
 		if self.verbose:
 			print("[!] Predicting based on majority!")
 
@@ -131,23 +141,29 @@ class NaiveBayes:
 		if self.verbose:
 			print("[>] Saving confusion matrix as confusion_matrix.png")
 
-if __name__ == '__main__':
+
+def main(verbose):
 	# create instance of Preprocess of training set
-	process1 = Preprocess('./dataset/sample.json')
+	process1 = Preprocess('./dataset/subset.json', verbose)
+	
+	# divide the data
+	data = process1.train_and_test()
 	
 	# fit model for naive bayes
-	model = NaiveBayes(process1, verbose=True)
-	model.fit(process1.data)
-
-	# create instance of Preprocess of testing set
-	process2 = Preprocess('./dataset/sample.json')
+	model = NaiveBayes(process1, verbose)
+	model.fit(data["train"])
 
 	# predict on data (text will normalise itself)
-	predicted_labels = model.predict_random(process2.data["text"], text_normalised=True)
-	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
+	predicted_labels = model.predict(data["test"], text_normalised=True)
 
-	print(predicted_labels)
-	print(process2.data["label"])
+	# get accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == data["test"]["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
 	
-	model.draw_confusion_matrix(process2.data["label"], predicted_labels)
-	print("[*] Accuracy: {0:.4f}".format(accuracy))
+	# draw confusion matrix
+	model.draw_confusion_matrix(data["test"]["label"], predicted_labels)
+	
+
+
+if __name__ == '__main__':
+	main(False)

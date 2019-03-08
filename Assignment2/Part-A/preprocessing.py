@@ -1,12 +1,59 @@
 import re
+import ast
 import json
 import pprint
+
 from string import punctuation
 from nltk import word_tokenize
 
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
-	def __init__(self, file_path):
+	def __init__(self, file_path, verbose=False):
+		self.verbose = verbose
+
+		with open(file_path) as f:
+			raw_data = f.readlines()
+
+		raw_data = [ast.literal_eval(x.strip()) for x in raw_data]
+
+		data = {"text": [], "label": []}
+		for raw_datum in raw_data:
+			data["text"].append(self.normalise_data(raw_datum["text"]))
+			data["label"].append(int(raw_datum["stars"]))
+
+		self.data = data
+		self.num_examples = len(self.data["text"])
+		
+		if self.verbose:
+			print("[#] Data preprocessed! ")
+			print("[>] Number of examples {}".format(self.num_examples))
+			print("[>] Sample example: {} \n {}\n".format(self.data["text"][0], self.data["label"][0]))
+
+
+	def train_and_test(self, ratio=0.8):
+		"""Divide `self.data` into train and test based on ratio"""
+
+		train = {"text": [], "label": []}
+		test = {"text": [], "label": []}
+
+		partition = int(self.num_examples*0.8)
+
+		# partition of dataset into train and test
+		train["text"] = self.data["text"][:partition]
+		train["label"] = self.data["label"][:partition]
+
+		test["text"] = self.data["text"][partition:]
+		test["label"] = self.data["label"][partition:]
+
+		if self.verbose:
+			print("[!] Data partitioned into train and test with ratio {}".format(ratio))
+
+		return {"train": train, "test": test}
+
+
+	def read_file_as_dict(file_path):
+		"""if file in a dict: Read from here"""
+
 		with open(file_path) as f:
 		   raw_data = json.load(f)
 
