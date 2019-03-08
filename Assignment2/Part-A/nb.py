@@ -97,7 +97,7 @@ class NaiveBayes:
 		test_data = test_data["text"]
 
 		if self.verbose:
-			print("[!] Predicting randomly!")
+			print("\n[>] Predicting Randomly with {} examples!".format(len(test_data)))
 
 		predicted_labels = []
 
@@ -105,19 +105,25 @@ class NaiveBayes:
 			i = randint(1, 5) #inclusive of 1 and 5
 			predicted_labels.append(i)
 
+		if self.verbose:
+			print("[#] Testing complete!\n")
+
 		return predicted_labels
 
 	def predict_majority(self, test_data, text_normalised=False):
 		test_data = test_data["text"]
 
 		if self.verbose:
-			print("[!] Predicting based on majority!")
+			print("\n[>] Predicting Majority with {} examples!".format(len(test_data)))
 
 		predicted_labels = []
 
 		max_label = max(self.class_priors, key=self.class_priors.get) 
 		for l in range(0, len(test_data)):
 			predicted_labels.append(int(max_label))
+
+		if self.verbose:
+			print("[#] Testing complete!\n")
 
 		return predicted_labels
 
@@ -144,7 +150,7 @@ class NaiveBayes:
 
 def main(verbose):
 	# create instance of Preprocess of training set
-	process1 = Preprocess('./dataset/subset.json', verbose)
+	process1 = Preprocess('./dataset/subset.json', verbose, stem=True, stopwords=True)
 	
 	# divide the data
 	data = process1.train_and_test()

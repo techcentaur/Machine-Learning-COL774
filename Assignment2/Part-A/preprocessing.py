@@ -5,11 +5,15 @@ import pprint
 
 from string import punctuation
 from nltk import word_tokenize
+from nltk.stem import PorterStemmer 
+from nltk.corpus import stopwords
 
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
-	def __init__(self, file_path, verbose=False):
+	def __init__(self, file_path, verbose=False, stem=False, stopwords=False):
 		self.verbose = verbose
+		self.stem = stem
+		self.stopwords = stopwords
 
 		with open(file_path) as f:
 			raw_data = f.readlines()
@@ -50,7 +54,6 @@ class Preprocess:
 
 		return {"train": train, "test": test}
 
-
 	def read_file_as_dict(file_path):
 		"""if file in a dict: Read from here"""
 
@@ -64,16 +67,18 @@ class Preprocess:
 
 		self.data = data
 
-
 	def normalise_data(self, text):
 		"""normalise a give string"""
 
 		text = self.apostrophe_normalisation(text)
 		tokens = self.punctuation_remove(word_tokenize(text))
 		tokens = [x.lower() for x in tokens]
+		if self.stopwords:
+			tokens = self.stopwords_removal(tokens)
+		if self.stem:
+			tokens = self.stemming(tokens)
 
 		return tokens
-
 
 	def apostrophe_normalisation(self, text):
 		"""takes a string, and normalise strings in it as per the rules, returns a string"""
@@ -89,7 +94,6 @@ class Preprocess:
 		raw = re.sub(r"\'m", " am", raw)
 		raw = re.sub(r"\'cause", "because", raw)
 		raw = re.sub(r"\'Cause", "Because", raw)
-
 		return raw
 
 
@@ -97,11 +101,22 @@ class Preprocess:
 		"""given a list of tokens, remove the punctuations, and return tokens"""
 
 		punctuation_list = list(punctuation)
-
 		for i in tokens:
 			if i in punctuation_list:
 				tokens.remove(i)
-		
+		return tokens
+
+	def stemming(self, tokens):
+		"""stem words from a list of tokens"""
+		ps = PorterStemmer() 
+		tokens = [ps.stem(tok) for tok in tokens]
+		return tokens
+
+	def stopwords_removal(self, tokens):				
+		"""remove stopwords from tokens"""
+
+		sw = set(stopwords.words('english'))
+		tokens = [x for x in tokens if not x in sw]
 		return tokens
 
 
@@ -119,32 +134,3 @@ if __name__ == '__main__':
 	print(processing.data)
 
 
-
-"""functions I will use later"""
-
-
-	# def normalize(self):
-	# 	lem = WordNetLemmatizer()
-	# 	clean_tokens = self.tokens
-
-	# 	for (w,t) in pos_tag(clean_tokens):
-	# 		wt = t[0].lower()
-			
-	# 		wt = [wt if wt in ['a','r','n','v'] else None]
-			
-	# 		wnew = lem.lemmatize(w,wt) if wt else None
-	# 		clean_tokens.remove(w)
-	# 		clean_tokens.append(wnew)
-
-	# 	self.tokens = clean_tokens
-	# 	return clean_tokens
-
-	# def stopwords_remove(self):		
-	# 	rawtext = self.text
-		
-	# 	tokens = nltk.word_tokenize(tokens)
-	# 	stopwords = set(stopwords.words('english'))
-
-	# 	clean_tokens = [x for x in toks if not x in stopwords]
-	# 	tokens = " ".join(clean_tokens)
-	# 	return text
