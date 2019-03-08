@@ -5,6 +5,7 @@ from string import punctuation
 from nltk import word_tokenize
 
 class Preprocess:
+	"""get preprocessed data as data{"text":[], "label":[]}"""
 	def __init__(self):
 		with open('./dataset/sample.json') as f:
 		   raw_data = json.load(f)
@@ -55,6 +56,15 @@ class Preprocess:
 				tokens.remove(i)
 		
 		return tokens
+
+
+def count_frequency(tokens):
+	"""given tokens, return the word count frequency"""
+	
+	count = {}
+	for t in tokens:
+		count[t] = count.get(t, 0.0) + 1.0
+	return count
 
 
 if __name__ == '__main__':
