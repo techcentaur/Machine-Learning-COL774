@@ -6,8 +6,8 @@ from nltk import word_tokenize
 
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
-	def __init__(self):
-		with open('./dataset/sample.json') as f:
+	def __init__(self, file_path):
+		with open(file_path) as f:
 		   raw_data = json.load(f)
 
 		data = {"text": [], "label": []}
