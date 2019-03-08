@@ -49,7 +49,7 @@ class NaiveBayes:
 				self.class_words[str(y)][word] += count
 
 		if self.verbose:
-			print("[>] Training complete!")
+			print("\n[#] Training complete!\n")
 
 
 	def predict(self, test_data, text_normalised=False):
@@ -119,17 +119,17 @@ class NaiveBayes:
 
 		# labels, title and ticks
 		ax.set_xlabel('Predicted labels');
-		ax.set_ylabel('True labels');
+		ax.set_ylabel('Actual labels');
 
-		ax.set_title('Confusion Matrix'); 
+		ax.set_title('Confusion Matrix | Part-A'); 
 		ax.xaxis.set_ticklabels([str(i) for i in range(1, 6)]);
 		ax.yaxis.set_ticklabels([str(i) for i in range(1, 6)]);
 
 		plt.show(block=False)
-		plt.savefig('temp.png')
+		plt.savefig('./confusion_matrix.png')
 
 		if self.verbose:
-			print("[>] Drawing confusion matrix!")
+			print("[>] Saving confusion matrix as confusion_matrix.png")
 
 if __name__ == '__main__':
 	# create instance of Preprocess of training set
