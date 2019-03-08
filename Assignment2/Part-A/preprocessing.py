@@ -16,7 +16,7 @@ class Preprocess:
 		self.verbose = verbose
 		self.stem = stem
 		self.stopwords = stopwords
-		self.feature_technique = "bigram"
+		self.feature_technique = "advanced"
 
 		with open(file_path) as f:
 			raw_data = f.readlines()
@@ -85,19 +85,41 @@ class Preprocess:
 				tokens = self.stemming(tokens)
 			return tokens
 		elif self.feature_technique is 'bigram':
-			# Feature: Words + Bigrams
+			# Feature: Words + N-grams
+
+			# normalise the apostrophe
+			text = self.apostrophe_normalisation(text)
+			# remove punctuation
+			tokens = self.punctuation_remove(word_tokenize(text))
+			# convert to lowercase
+			tokens = [x.lower() for x in tokens]
+
+			if self.stopwords:
+				tokens = self.stopwords_removal(tokens)
+			if self.stem:
+				tokens = self.lemmatizer(tokens)		
+
+			bigrms = list(nltk.bigrams(tokens))
+			# trigrms = list(nltk.trigrams(tokens))
+
+			tokens = tokens + [' '.join([x, y]) for (x,y) in bigrms]
+			# tokens = tokens + [' '.join([x, y, z]) for (x,y,z) in trigrms]
+			
+			return tokens
+
+		elif self.feature_technique is 'advanced':
+			# Feature: Word Advanced
 			text = self.apostrophe_normalisation(text)
 			tokens = self.punctuation_remove(word_tokenize(text))
 			tokens = [x.lower() for x in tokens]
-
-			# Is stopwords removel good in bigram?
 			if self.stopwords:
 				tokens = self.stopwords_removal(tokens)
 			if self.stem:
 				tokens = self.lemmatizer(tokens)
 
-			bigrms = list(nltk.bigrams(tokens))
-			tokens = tokens + [' '.join([x, y]) for (x,y) in bigrms]
+			tagged_toks = (nltk.pos_tag(tokens))
+			tags = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+			tokens = [x for (x,y) in tagged_toks if y in tags]
 
 			return tokens
 

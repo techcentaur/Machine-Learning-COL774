@@ -167,7 +167,7 @@ def main(verbose):
 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
 	
 	# draw confusion matrix
-	model.draw_confusion_matrix(data["test"]["label"], predicted_labels, num=2)
+	model.draw_confusion_matrix(data["test"]["label"], predicted_labels, num=3)
 	
 
 if __name__ == '__main__':
