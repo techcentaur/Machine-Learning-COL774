@@ -1,4 +1,5 @@
 import re
+import os
 import math
 
 from random import randint
@@ -131,6 +132,9 @@ class NaiveBayes:
 	def draw_confusion_matrix(self, actual_y, predicted_y, num=1):
 		cm = confusion_matrix(actual_y, predicted_y)
 
+		if not os.path.exists("./figures"):
+			os.makedirs("./figures")
+
 		fig, ax = plt.subplots()
 		sns.heatmap(cm, annot=True, ax = ax, cmap='Greens'); #annot=True to annotate cells
 
@@ -142,8 +146,9 @@ class NaiveBayes:
 		ax.xaxis.set_ticklabels([str(i) for i in range(1, 6)]);
 		ax.yaxis.set_ticklabels([str(i) for i in range(1, 6)]);
 
+
 		plt.show(block=False)
-		plt.savefig('./confusion_matrix_{}.png'.format(str(num)))
+		plt.savefig('./figures/confusion_matrix_{}.png'.format(str(num)))
 
 		if self.verbose:
 			print("[>] Saving confusion matrix as confusion_matrix_{}.png".format(str(num)))
