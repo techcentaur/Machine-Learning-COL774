@@ -13,13 +13,25 @@ class Processing:
 		label1 = self.d
 		label2 = (self.d+1) % 10
 
+		# print(label1, label2)
+
 		data = {"data": [], "label":[]}
 
 		df = pd.read_csv(self.train_file)
+
+		i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
+
+			# if (l[0] != 1) and (l[0] != 2):
+			# 	continue
+
 			data["data"].append(l[1:])
 			data["label"].append(l[0])
+	
+			if i > 50:
+				break
+			i+=1
 
 		self.data = data
 
