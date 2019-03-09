@@ -62,24 +62,45 @@ class SVM:
 		condition = (alphas > 1e-4).reshape(-1)
 		bias = Y[condition] - np.dot(X[condition], weights)
 
-		# print(len(weights))
-		print(alphas.shape)
-		print(weights.shape)
-		print(bias)
-		bias = bias[0]
+		weights = weights.reshape((weights.shape[0], 1))
+		# print(alphas.shape)
+		# print(weights.shape)
+		# print(weights)
+		# print(bias)
+		bias = 0
+		self.weights = weights
+		self.bias = bias 
+
+	def predict(self, test):
+		predicted_labels = []
+		for X in test["data"]:
+			predicted_labels.append((self.weights.T @ X) + self.bias)
+		
+		return [1 if x>0 else 2 for x in predicted_labels]
 
 
 def main():
 	# do processing
 	p = Processing(train_file="./dataset/train.csv")
 	p.process_data()
+	data = p.train_and_test()
 
 	# create model
 	s = SVM(verbose=False)
-	alphas = s.fit(p.data)
+	alphas = s.fit(data["train"])
 
 	# find weights and bias
-	s.weights_and_bias(alphas, p.data)
+	s.weights_and_bias(alphas, data["train"])
+
+	# make prediction
+	predicted_labels = s.predict(data["test"])
+	# print(predicted_labels)
+	# print(data["test"]["label"])
+
+	# get accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == data["test"]["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
+	print("[*] Test Error Rate: {}\n".format(1-accuracy))
 
 
 if __name__ == '__main__':

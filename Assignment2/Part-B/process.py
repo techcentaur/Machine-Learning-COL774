@@ -23,17 +23,35 @@ class Processing:
 		for index, rows in df.iterrows():
 			l = list(rows)
 
-			# if (l[0] != 1) and (l[0] != 2):
-			# 	continue
+			if (l[0] != 1) and (l[0] != 2):
+				continue
 
 			data["data"].append(l[1:])
 			data["label"].append(l[0])
 	
-			if i > 50:
+			if i > 100:
 				break
 			i+=1
 
 		self.data = data
+
+	def train_and_test(self, ratio=0.8):
+		num_examples = len(self.data["data"])
+
+		train = {"data": [], "label": []}
+		test = {"data": [], "label": []}
+
+		partition = int(num_examples*0.8)
+
+		# partition of dataset into train and test
+		train["data"] = self.data["data"][:partition]
+		train["label"] = self.data["label"][:partition]
+
+		test["data"] = self.data["data"][partition:]
+		test["label"] = self.data["label"][partition:]
+
+		return {"train": train, "test": test}
+
 
 if __name__ == '__main__':
 	p = Processing(train_file="./dataset/train.csv")
