@@ -14,9 +14,7 @@ class Processing:
 		label2 = (self.d+1) % 10
 
 		# print(label1, label2)
-
 		data = {"data": [], "label":[]}
-
 		df = pd.read_csv(self.train_file)
 
 		i = 0

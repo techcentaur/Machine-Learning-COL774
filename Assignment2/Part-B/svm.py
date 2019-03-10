@@ -23,15 +23,29 @@ class SVM:
 		X = np.array(data["data"])
 		Y = np.array(data["label"])
 
+		print(Y.shape)
+		print(X.shape)
+		# print(Y[:, None].shape)
+		# print((Y.reshape(1, -1)).shape)
+
 		# Solving dual objective
-		K = Y[:, None] * X 
-		K = np.dot(K, K.T)
+		# Y_dash = Y[:, None] @ Y.reshape(1, -1)
+		Y_dash = np.outer(Y[:, None], Y[:, None])
+		X_dash = np.dot(X, X.T)
+		print(X_dash.shape)
+		print(Y_dash.shape)
+		 
+		# X_dash= X_dash.reshape((X.shape[0]), 1)
+		# print(K.shape)
+		K = (Y_dash * X_dash)
+		print(K.shape)
 
 		K = K.astype(float)
 		X = X.astype(float)
 		Y = Y.astype(float)
 
 		# print(K.shape)
+		# print(K)
 
 		P = matrix(K)
 		q = matrix(-np.ones((num_examples, 1)))
@@ -40,15 +54,17 @@ class SVM:
 		h = matrix(np.zeros(num_examples))
 		
 		A = matrix(Y.reshape(1, -1))
-		b = matrix(np.zeros(1))
+		b = matrix([0.0])
 		
+		print(P.size, q.size, G.size, h.size, A.size, b.size)
+
 		if self.verbose:
 			print("\n[!] Solving by CSXOPT!")
 
 		solvers.options['show_progress'] = self.verbose
 
 		sol = solvers.qp(P, q, G, h, A, b)
-		alphas = np.array(sol['x'])
+		alphas = np.array(sol['x']).squeeze()
 		
 		return alphas
 
@@ -57,15 +73,15 @@ class SVM:
 		Y = np.array(data["label"])
 
 		# get weights
-		weights = np.sum(alphas * Y[:, None] * X, axis=0)
+		weights = np.dot(alphas * Y[:, None], X)
 		# get bias
-		condition = (alphas > 1e-4).reshape(-1)
-		bias = Y[condition] - np.dot(X[condition], weights)
+		# condition = (alphas > 1e-4).reshape(-1)
+		print(weights.shape)
+		# bias = np.mean(Y - np.dot(X, weights))
 
-		weights = weights.reshape((weights.shape[0], 1))
-		# print(alphas.shape)
-		# print(weights.shape)
-		# print(weights)
+		# weights = weights.reshape((weights.shape[0], 1))
+		print(alphas)
+		print(weights)
 		# print(bias)
 		bias = 0
 		self.weights = weights
@@ -99,8 +115,8 @@ def main():
 
 	# get accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == data["test"]["label"][i]])) / float(len(predicted_labels))
-	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
-	print("[*] Test Error Rate: {}\n".format(1-accuracy))
+	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
+	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
 
 if __name__ == '__main__':
