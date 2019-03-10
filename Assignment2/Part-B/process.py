@@ -3,7 +3,7 @@
 import csv
 import pandas as pd
 class Processing:
-	def __init__(self, train_file, d=0):
+	def __init__(self, train_file, d=1):
 		self.d = d
 		self.train_file = train_file
 
@@ -12,6 +12,7 @@ class Processing:
 
 		label1 = self.d
 		label2 = (self.d+1) % 10
+		max_pixel = 255
 
 		# print(label1, label2)
 		data = {"data": [], "label":[]}
@@ -21,25 +22,37 @@ class Processing:
 		for index, rows in df.iterrows():
 			l = list(rows)
 
-			if (l[0] != label1) and (l[0] != label2):
+			if (l[784] != 1):
 				continue
 
-			data["data"].append(l[1:])
-			data["label"].append(l[0])
-	
-			if i > 500:
-				break
-			i+=1
+			data["data"].append([(x/max_pixel) for x in l[:-1]])
+			data["label"].append(l[784])
+
+		for index, rows in df.iterrows():
+			l = list(rows)
+
+			if (l[784] != 2):
+				continue
+
+			data["data"].append([(x/max_pixel) for x in l[:-1]])
+			data["label"].append(-1)
+
+			# if i>500:
+			# 	break
+			# i+=1
+			# # print(data)
+			# # break
 
 		self.data = data
+		# print(data)
 
-	def train_and_test(self, ratio=0.8):
+	def train_and_test(self, ratio=0.9):
 		num_examples = len(self.data["data"])
 
 		train = {"data": [], "label": []}
 		test = {"data": [], "label": []}
 
-		partition = int(num_examples*0.8)
+		partition = int(num_examples*ratio)
 
 		# partition of dataset into train and test
 		train["data"] = self.data["data"][:partition]
