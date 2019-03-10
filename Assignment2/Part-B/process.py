@@ -3,7 +3,7 @@
 import csv
 import pandas as pd
 class Processing:
-	def __init__(self, train_file, d=1):
+	def __init__(self, train_file, d=0):
 		self.d = d
 		self.train_file = train_file
 
@@ -21,13 +21,13 @@ class Processing:
 		for index, rows in df.iterrows():
 			l = list(rows)
 
-			if (l[0] != 1) and (l[0] != 2):
+			if (l[0] != label1) and (l[0] != label2):
 				continue
 
 			data["data"].append(l[1:])
 			data["label"].append(l[0])
 	
-			if i > 100:
+			if i > 500:
 				break
 			i+=1
 
