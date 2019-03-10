@@ -51,7 +51,6 @@ class SVM:
 		# X_dash= X_dash.reshape((X.shape[0]), 1)
 		# K = K.astype(float)
 		K = K/2
-		print(K)
 		P = matrix(K, tc='d')
 		q = matrix(-1*np.ones((num_examples, 1)), tc='d')
 
@@ -73,21 +72,20 @@ class SVM:
 		if sol['status'] is "unknown":
 			print("[*] Unknown solution returned")
 
-		alphas = np.array(sol['x']).squeeze()
-		print(alphas)
-		return alphas
+		self.alphas = np.array(sol['x']).squeeze()
+		return self.alphas
 
-	def weights_and_bias(self, alphas, data):
+	def weights_and_bias(self, data):
 		X = np.array(data["data"])
 		Y = np.array(data["label"])
 
-		SV_idxs = list(filter(lambda i:alphas[i] > 1e-6, range(len(Y))))
+		SV_idxs = list(filter(lambda i:self.alphas[i] > 1e-6, range(len(Y))))
 
-		self.SV_X, self.SV_Y, self.alphas = X[SV_idxs], Y[SV_idxs], alphas[SV_idxs]
+		self.SV_X, self.SV_Y, self.alphas = X[SV_idxs], Y[SV_idxs], self.alphas[SV_idxs]
 		self.SV_len = len(SV_idxs)
 
 		if self.verbose:
-			print("[*] {} number of support vectors!", self.SV_len)
+			print("[*] {} number of support vectors!".format(self.SV_len))
 
 		# get weights
 		if self.kernel_type is 'linear':
@@ -96,7 +94,7 @@ class SVM:
 		SV_bound = self.alphas < self.noise - 1e-6
 
 		temp = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, self.SV_X[SV_bound]))
-		bias = np.mean(self.SV_Y[SV_bound] - temp)
+		self.bias = np.mean(self.SV_Y[SV_bound] - temp)
 
 		self.X = X
 		self.Y = Y
@@ -104,45 +102,39 @@ class SVM:
 		if self.kernel_type is 'linear':
 			self.weights = weights
 
-		self.alphas = alphas
-		self.bias = bias 
-
 	def predict(self, test):
 		predicted_labels = []
 		for X in test["data"]:
 			X = np.array(X)
-			X = X.reshape((-1, 1))
 			X = X.astype(float)
 
-			pred = np.dot(self.alphas * self.SV_Y, self.kernel(self.SV_X, X.T)) + self.bias
-			# pred = np.dot(self.SV_Y * self.alphas.T, self.kernel(self.SV_X, X)) + self.bias
+			pred = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, X)) + self.bias
 
-			predicted_labels.append(1 if pred[0] > 0 else 2)
+			if pred>0:
+				predicted_labels.append(1)
+			else:
+				predicted_labels.append(2)	
 		
-		# print(predicted_labels)
 		return predicted_labels
-		# return [1 if x>0 else 2 for x in predicted_labels]
 
 
 def main():
 	# processing for training
 	p = Processing(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
-	p.process_data()
+	# p.process_data()
 
 	# create model
 	s = SVM(verbose=True)
-	alphas = s.fit(p.data)
+	s.fit(p.data)
 
 	# find weights and bias
-	s.weights_and_bias(alphas, data["train"])
+	s.weights_and_bias(p.data)
 
 	# make prediction
-	predicted_labels = s.predict(data["test"])
-	print(predicted_labels)
-	print(data["test"]["label"])
+	predicted_labels = s.predict(p.testdata)
 
 	# get accuracy
-	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == data["test"]["label"][i]])) / float(len(predicted_labels))
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
 	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
