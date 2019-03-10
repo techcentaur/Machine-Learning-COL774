@@ -107,8 +107,9 @@ class SVM:
 		for X in test["data"]:
 			X = np.array(X)
 			X = X.astype(float)
+			X = X[:,None]
 
-			pred = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, X)) + self.bias
+			pred = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, X.T)) + self.bias
 
 			if pred>0:
 				predicted_labels.append(1)
