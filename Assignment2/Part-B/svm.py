@@ -10,11 +10,18 @@ from cvxopt import (matrix, solvers)
 from process import Processing
 
 class SVM:
-	def __init__(self, verbose=False, kernel_type='linear'):
+	def __init__(self, verbose=False, kernel_type='linear', gamma = 0.05, C = 1.0):
 		self.verbose = verbose
-		self.gamma = 0.05
-		self.noise = 1.0
+		self.gamma = gamma
+		self.C = C
 		self.kernel_type = kernel_type
+
+		if self.verbose:
+			if self.kernel_type is 'linear':
+				print("[!] SVM -> Kernel: {} | C: {}".format(self.kernel_type, self.C))
+
+			elif self.kernel_type is 'gaussian':
+				print("[!] SVM -> Kernel: {} | Gamma: {} | C: {}\n".format(self.kernel_type, self.gamma, self.C))
 
 	def kernel(self, x, x_dash=None):
 		# one-arg -> x_dash = x
@@ -93,7 +100,7 @@ class SVM:
 		if self.kernel_type is 'linear':
 			weights = np.dot(self.alphas * self.SV_Y, self.SV_X)
 		
-		SV_bound = self.alphas < self.noise - 1e-6
+		SV_bound = self.alphas < self.C - 1e-6
 
 		temp = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, self.SV_X[SV_bound]))
 		self.bias = np.mean(self.SV_Y[SV_bound] - temp)

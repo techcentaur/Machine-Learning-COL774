@@ -14,12 +14,23 @@ from svm import SVM
 from process import (Processing, ProcessingForMulti)
 
 class MultiSVM:
-	def __init__(self):
-		self.gamma = 0.05
-		self.noise = 1.0
+	def __init__(self, verbose=False, kernel_type='gaussian', gamma = 0.05, C = 1.0):
+		# parameters
+		self.gamma = gamma
+		self.C = C
+		self.kernel_type = kernel_type
+		self.verbose = verbose
 
 		self.num_classes = 0
 		self.binary_svm_instances = []
+
+		if self.verbose:
+			if self.kernel_type is 'linear':
+				print("[!] MultiSVM -> Kernel: {} | C: {}".format(self.kernel_type, self.C))
+
+			elif self.kernel_type is 'gaussian':
+				print("[!] MultiSVM -> Kernel: {} | Gamma: {} | C: {}\n".format(self.kernel_type, self.gamma, self.C))
+
 
 	def fit(self, data):
 		unique_labels = np.unique(data["label"])
@@ -35,8 +46,6 @@ class MultiSVM:
 
 				# positive = positive.astype(int)
 				# negative = negative.astype(int)
-				print(negative)
-				print(positive)
 
 				X_data = np.r_[data["data"][negative], data["data"][positive]]
 				Y_data = np.r_[data["label"][negative], data["label"][positive]]
@@ -45,9 +54,10 @@ class MultiSVM:
 				Y_data[Y_data == unique_labels[i]] = -1.0
 				Y_data[Y_data == unique_labels[j]] = 1.0
 
-				print("[*] Classifier: (i={}, j={})".format(i, j))
+				if self.verbose:
+					print("[*] Classifier: (i={}, j={})".format(i, j))
 
-				svm_object = SVM(verbose=True)
+				svm_object = SVM(self.verbose, self.kernel_type, self.gamma, self.C)
 				svm_object.fit({"data": X_data, "label": Y_data})
 
 				self.binary_svm_instances.append(copy.deepcopy(svm_object))
@@ -55,7 +65,8 @@ class MultiSVM:
 	def predict(self, testdata):
 		num_test_data = len(testdata["data"])
 
-		print("[!] testing examples: {}".format(num_test_data))
+		if self.verbose:
+			print("[!] testing examples: {}".format(num_test_data))
 
 		svm_instances = (self.num_classes * (self.num_classes-1))/2
 		predictions = np.zeros((num_test_data, self.num_classes))
@@ -74,7 +85,15 @@ class MultiSVM:
 
 				svm_object_id += 1
 
-		return np.argmax(predictions, axis=1)
+
+		preds = []
+		for p in predictions:
+			temp = np.where(p==p.max())
+			preds.append(temp[0][temp[0].argmax()])
+
+		preds = np.array(preds)
+
+		return preds
 
 
 def main():
@@ -82,18 +101,14 @@ def main():
 	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
 
 	# apply model to it
-	m_svm = MultiSVM()
-	print("[*] Training start!")
+	m_svm = MultiSVM(False, 'gaussian', 0.05, 1.0)
 	m_svm.fit(p.data)
-	print("[*] Training over!")
 
 	predicted_labels = m_svm.predict(p.testdata)
 
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
 	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
-
-
 
 if __name__ == '__main__':
 	main()
