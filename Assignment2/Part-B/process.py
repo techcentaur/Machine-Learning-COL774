@@ -2,6 +2,7 @@
 
 import csv
 import pandas as pd
+
 class Processing:
 	def __init__(self, train_file, test_file, d=1):
 		self.d = d
@@ -94,6 +95,43 @@ class Processing:
 		test["label"] = self.data["label"][partition:]
 
 		return {"train": train, "test": test}
+
+
+class ProcessingForMulti:
+	def __init__(self, train_file, test_file):
+		self.train_file = train_file
+		self.test_file = test_file
+
+		self.process_data()
+		self.process_test_data()
+
+	def process_data(self):
+		max_pixel = 255
+
+		data = {"data": [], "label":[]}
+		df = pd.read_csv(self.train_file)
+
+		for index, rows in df.iterrows():
+			l = list(rows)
+
+			data["data"].append([(x/max_pixel) for x in l[:-1]])
+			data["label"].append(l[784])
+
+		self.data = data
+
+	def process_test_data(self):
+		max_pixel = 255
+
+		testdata = {"data": [], "label":[]}
+		df = pd.read_csv(self.test_file)
+
+		for index, rows in df.iterrows():
+			l = list(rows)
+
+			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
+			testdata["label"].append(l[784])
+
+		self.testdata = testdata
 
 
 if __name__ == '__main__':

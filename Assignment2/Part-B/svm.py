@@ -73,7 +73,9 @@ class SVM:
 			print("[*] Unknown solution returned")
 
 		self.alphas = np.array(sol['x']).squeeze()
-		return self.alphas
+		
+		# calculate weights and bias implicitly
+		self.weights_and_bias(data)
 
 	def weights_and_bias(self, data):
 		X = np.array(data["data"])
@@ -127,10 +129,7 @@ def main():
 	# create model
 	s = SVM(verbose=True)
 	s.fit(p.data)
-
-	# find weights and bias
-	s.weights_and_bias(p.data)
-
+	
 	# make prediction
 	predicted_labels = s.predict(p.testdata)
 
