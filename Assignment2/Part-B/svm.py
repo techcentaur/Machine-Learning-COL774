@@ -1,6 +1,12 @@
 # SVM Model
+# add libsvm in path
+import sys
+sys.path.append('/home/student_bharti/Ankit/Machine-Learning-COL774/Assignment2/Part-B/libsvm/python')
+
 
 import numpy as np 
+
+from svmutil import *
 
 import matplotlib
 matplotlib.use('Agg')
@@ -8,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from cvxopt import (matrix, solvers)
 from process import Processing
+
 
 class SVM:
 	def __init__(self, verbose=False, kernel_type='linear', gamma = 0.05, C = 1.0):
@@ -133,6 +140,41 @@ class SVM:
 		return np.sign(pred)
 
 
+class SVM_libsvm:
+	def __init__(self, kernel_type='gaussian', C=1.0):
+		self.kernel_type = kernel_type
+		self.C = C
+
+
+	def fit(self, data):
+		prob = svm_problem(data["label"], data["data"])
+		param = svm_parameter()
+		
+		if self.kernel_type is 'linear':
+			param.kernel_type = LINEAR
+		elif self.kernel_type is 'gaussian':
+			param.kernel_type = RBF
+
+		param.C = self.C
+
+		model = svm_train(prob, param)
+		self.model = model
+
+	def predict(self, testdata, label1, label2):
+		labels =  svm_predict(testdata["label"], testdata["data"], self.model)
+		predicted_labels = []
+		# print(labels[0])
+		# print(type(labels))
+		# print(len(labels))
+
+		for l in labels[0]:
+			if l>0:
+				predicted_labels.append(label1)
+			else:
+				predicted_labels.append(label2)	
+		
+		return predicted_labels
+
 # main function for svm binary classification
 def main():
 	# processing for training
@@ -153,5 +195,21 @@ def main():
 
 	# print("[*] Support Vectors: \n", s.SV_X[0])
 
+# use LIBSVM
+def main_use_libsvm():
+	p = Processing(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
+
+	s = SVM_libsvm(kernel_type='gaussian', C=1.0)
+	s.fit(p.data)
+
+	predicted_labels = s.predict(p.testdata, p.label1, p.label2)
+	# print(predicted_labels)
+	# print(p.testdata["label"])
+
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
+	print("\n[*] Accuracy on test set: {0:.5f}".format(accuracy))
+	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
+
+
 if __name__ == '__main__':
-	main()
+	main_use_libsvm()

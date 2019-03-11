@@ -24,6 +24,7 @@ class Processing:
 		data = {"data": [], "label":[]}
 		df = pd.read_csv(self.train_file)
 
+		i =0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -32,7 +33,11 @@ class Processing:
 
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(1)
+			i+=1
+			if i>100:
+				break
 
+		i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -41,10 +46,15 @@ class Processing:
 
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(-1)
+			i+=1
+			if i>100:
+				break
 
 		# set data (train data)
 		self.data = data
 		# print(len(self.data["data"]))
+		self.label1 = label1
+		self.label2 = label2
 
 	def process_test_data(self):
 		"""Binary Classification"""
@@ -57,6 +67,7 @@ class Processing:
 		testdata = {"data": [], "label":[]}
 		df = pd.read_csv(self.test_file)
 
+		i=0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -65,7 +76,11 @@ class Processing:
 
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(label1)
+			i+=1
+			if i>10:
+				break
 
+		i=0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -74,6 +89,9 @@ class Processing:
 
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(label2)
+			i+=1
+			if i>10:
+				break
 
 		# set data (train data)
 		self.testdata = testdata
