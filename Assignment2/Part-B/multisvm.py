@@ -1,6 +1,6 @@
 """Multi-class classification SVM"""
 
-
+import os
 import copy
 import numpy as np 
 
@@ -9,9 +9,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt 
 
 from cvxopt import (matrix, solvers)
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 from svm import SVM
 from process import (Processing, ProcessingForMulti)
+
 
 class MultiSVM:
 	def __init__(self, verbose=False, kernel_type='gaussian', gamma = 0.05, C = 1.0):
@@ -82,9 +85,7 @@ class MultiSVM:
 				predictions[pred<0, i] += 1.0
 				# pred>0: label j
 				predictions[pred>0, j] += 1.0
-
 				svm_object_id += 1
-
 
 		preds = []
 		for p in predictions:
@@ -96,6 +97,32 @@ class MultiSVM:
 		return preds
 
 
+	def draw_confusion_matrix(self, actual_y, predicted_y, name=''):
+		"""draw confusion matrix as the name suggest"""
+
+		cm = confusion_matrix(actual_y, predicted_y)
+
+		if not os.path.exists("./figures"):
+			os.makedirs("./figures")
+
+		fig, ax = plt.subplots()
+		sns.heatmap(cm, annot=True, ax = ax, cmap='Greens'); #annot=True to annotate cells
+
+		# labels, title and ticks
+		ax.set_xlabel('Predicted labels');
+		ax.set_ylabel('Actual labels');
+
+		ax.set_title('Confusion Matrix | Part-B | Multi-Class'); 
+		ax.xaxis.set_ticklabels([str(i) for i in range(0, 10)]);
+		ax.yaxis.set_ticklabels([str(i) for i in range(0, 10)]);
+
+		plt.show(block=False)
+		plt.savefig('./figures/confusion_matrix_{}.png'.format(name))
+
+		if self.verbose:
+			print("[>] Saving confusion matrix as confusion_matrix_{}.png".format(name))
+
+
 def main():
 	# processing for training
 	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
@@ -105,6 +132,8 @@ def main():
 	m_svm.fit(p.data)
 
 	predicted_labels = m_svm.predict(p.testdata)
+	# draw confusion matrix
+	m_svm.draw_confusion_matrix(p.testdata["label"], predicted_labels)
 
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))

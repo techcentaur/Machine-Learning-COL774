@@ -114,14 +114,14 @@ class ProcessingForMulti:
 		data = {"data": [], "label":[]}
 		df = pd.read_csv(self.train_file)
 
-		i = 0
+		# i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(l[784])
-			i+=1
-			if i>100:
-				break
+			# i+=1
+			# if i>100:
+			# 	break
 
 		data["data"] = np.array(data["data"])
 		data["label"] =  np.array(data["label"])
@@ -134,14 +134,14 @@ class ProcessingForMulti:
 		testdata = {"data": [], "label":[]}
 		df = pd.read_csv(self.test_file)
 
-		i = 0
+		# i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(l[784])
-			i+=1
-			if i>20:
-				break
+			# i+=1
+			# if i>20:
+			# 	break
 
 		testdata["data"] = np.array(testdata["data"])
 		testdata["label"] =  np.array(testdata["label"])
