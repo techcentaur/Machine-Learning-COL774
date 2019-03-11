@@ -2,6 +2,7 @@
 
 import csv
 import pandas as pd
+import numpy as np
 
 class Processing:
 	def __init__(self, train_file, test_file, d=1):
@@ -105,17 +106,25 @@ class ProcessingForMulti:
 		self.process_data()
 		self.process_test_data()
 
+		print("[*] Processing data for multi-class classification!")
+
 	def process_data(self):
 		max_pixel = 255
 
 		data = {"data": [], "label":[]}
 		df = pd.read_csv(self.train_file)
 
+		i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
-
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(l[784])
+			i+=1
+			if i>100:
+				break
+
+		data["data"] = np.array(data["data"])
+		data["label"] =  np.array(data["label"])
 
 		self.data = data
 
@@ -125,11 +134,15 @@ class ProcessingForMulti:
 		testdata = {"data": [], "label":[]}
 		df = pd.read_csv(self.test_file)
 
+		# i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
-
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(l[784])
+			# i+=1
+
+		testdata["data"] = np.array(testdata["data"])
+		testdata["label"] =  np.array(testdata["label"])
 
 		self.testdata = testdata
 

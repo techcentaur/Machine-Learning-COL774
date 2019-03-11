@@ -110,7 +110,6 @@ class SVM:
 			X = np.array(X)
 			X = X.astype(float)
 			X = X[:,None]
-
 			pred = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, X.T)) + self.bias
 
 			if pred>0:
@@ -120,7 +119,14 @@ class SVM:
 		
 		return predicted_labels
 
+	def predict_score(self, X):
+		"""predict a singleton test"""
 
+		pred = np.dot((self.alphas * self.SV_Y), self.kernel(self.SV_X, X)) + self.bias
+		return np.sign(pred)
+
+
+# main function for svm binary classification
 def main():
 	# processing for training
 	p = Processing(train_file="./dataset/train.csv", test_file="./dataset/test.csv")

@@ -33,6 +33,8 @@ class MultiSVM:
 				negative = data["label"] == unique_labels[i]
 				positive = data["label"] == unique_labels[j]
 
+				# positive = positive.astype(int)
+				# negative = negative.astype(int)
 				print(negative)
 				print(positive)
 
@@ -44,8 +46,6 @@ class MultiSVM:
 				Y_data[Y_data == unique_labels[j]] = 1.0
 
 				print("[*] Classifier: (i={}, j={})".format(i, j))
-
-				print(X_data)
 
 				svm_object = SVM(verbose=True)
 				svm_object.fit({"data": X_data, "label": Y_data})
@@ -65,7 +65,7 @@ class MultiSVM:
 			for j in range(i+1, self.num_classes):
 
 				# get predicted label for each class and report the maximum wins
-				pred = self.binary_svm_instances[svm_object_id].predict(testdata)
+				pred = self.binary_svm_instances[svm_object_id].predict_score(testdata["data"])
 
 				# pred<0: label i
 				predictions[pred<0, i] += 1.0
@@ -83,7 +83,10 @@ def main():
 
 	# apply model to it
 	m_svm = MultiSVM()
+	print("[*] Training start!")
 	m_svm.fit(p.data)
+	print("[*] Training over!")
+
 	predicted_labels = m_svm.predict(p.testdata)
 
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
