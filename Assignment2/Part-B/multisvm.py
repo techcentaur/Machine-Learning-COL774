@@ -8,6 +8,7 @@ import os
 import copy
 import timeit
 import numpy as np 
+import pandas as pd
 
 import matplotlib
 matplotlib.use('Agg')
@@ -137,7 +138,7 @@ class MultiSVM:
 
 
 class MultiSVM_libsvm:
-	def __init__(self, verbose=True, kernel_type='gaussian', C = 1.0):
+	def __init__(self, verbose=True, C = 1.0, kernel_type='gaussian'):
 		# parameters
 		self.gamma = 0.05
 		self.C = C
@@ -172,7 +173,7 @@ class MultiSVM_libsvm:
 				if self.verbose:
 					print("[*] Classifier: (i={}, j={})".format(i, j))
 
-				svm_object = SVM_libsvm(kernel_type='gaussian', C=1.0)
+				svm_object = SVM_libsvm(kernel_type=self.kernel_type, C=self.C)
 				svm_object.fit({"data": X_data, "label": Y_data})
 
 				self.binary_svm_instances.append(svm_object)
@@ -184,8 +185,8 @@ class MultiSVM_libsvm:
 	def predict(self, testdata):
 		num_test_data = len(testdata["data"])
 
-		if self.verbose:
-			print("[!] testing examples: {}".format(num_test_data))
+		# if self.verbose:
+		print("[!] testing examples: {}".format(num_test_data))
 
 		svm_instances = (self.num_classes * (self.num_classes-1))/2
 		predictions = np.zeros((num_test_data, self.num_classes))
@@ -267,16 +268,16 @@ def main(verbose=True):
 
 
 # use LIBSVM
-def main_use_libsvm(verbose=True):
-	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
+def main_use_libsvm(verbose=True, C=1.0, validation=False):
+	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv", validation=validation)
 
-	s = MultiSVM_libsvm(verbose, kernel_type='gaussian', C=1.0)
+	s = MultiSVM_libsvm(verbose, C, kernel_type='gaussian')
 	s.fit(p.data)
 
 	predicted_labels = s.predict(p.testdata)
 
 	# draw confusion matrix for test data only
-	s.draw_confusion_matrix(p.testdata["label"], predicted_labels, name='multisvm_libsvm_test_data')
+	# s.draw_confusion_matrix(p.testdata["label"], predicted_labels, name='multisvm_libsvm_test_data')
 	
 	# test accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
@@ -285,13 +286,68 @@ def main_use_libsvm(verbose=True):
 
 	print('[!] Computational time (of training): {}'.format(s.time_taken))
 
-	# train accuracy
-	predicted_labels = s.predict(p.data)
-	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.data["label"][i]])) / float(len(predicted_labels))
-	print("[*] Accuracy on train set: {0:.5f}".format(accuracy))
-	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
+	# # train accuracy
+	# predicted_labels = s.predict(p.data)
+	# accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.data["label"][i]])) / float(len(predicted_labels))
+	# print("[*] Accuracy on train set: {0:.5f}".format(accuracy))
+	# print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
+	# validation set accuracy
+	predicted_labels = s.predict(p.validationdata)
+	accuracy2 = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.validationdata["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on validation set: {0:.5f}".format(accuracy2))
+	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy2))
+
+	return [accuracy, accuracy2]
+
+# this is for variable values of c
+def main_with_variable_c():
+
+	c_values = [0.00001, 0.001, 1, 5, 10]
+	accuracy_valid_set = []
+	accuracy_test_set = []
+
+	for c_value in c_values:
+
+		print("[!] For C-value: {}".format(c_value))
+		acc = main_use_libsvm(verbose=True, C=c_value, validation=True)
+
+		accuracy_test_set.append(acc[0])
+		accuracy_valid_set.append(acc[1])
+
+	# with open('values.txt', 'w') as f:
+	# 	f.write("Test Set")
+	# 	f.write(str(accuracy_test_set) + "\n")
+	# 	f.write("Validation Set")
+	# 	f.write(str(accuracy_valid_set) + "\n")
+	# 	f.write("C-Values")
+	# 	f.write(str(c_values) + "\n")
+
+	fig, ax = plt.subplots(figsize=(12, 12))
+
+	ax.plot(c_values, accuracy_valid_set, label="Validation Data", color='blue')
+	ax.plot(c_values, accuracy_test_set, label="Test Data", color='red')
+	ax.legend(loc='upper right', fontsize='x-large')
+
+	plt.xlabel('C (noise) - Values')
+	plt.ylabel('Accuracies on datasets')
+	plt.title('C-values vs Accuracies on Test and Validation Data')
+
+	# plt.savefig
+	# ax.set_xlim(left=0)
+	ax.set_ylim(bottom=0)
+	ax.set_xscale('log')
+
+
+	if not os.path.exists("./figures"):
+		os.makedirs("./figures")
+
+	plt.savefig("./figures/validation_test_vs_c_values.png")
+
+	print("[!] Data plotted and saved in the directory!")
 
 if __name__ == '__main__':
-	main_use_libsvm(verbose=True)
+
+	# main_use_libsvm(verbose=True)
 	# main(verbose=True)
+	main_with_variable_c()
