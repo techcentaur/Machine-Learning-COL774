@@ -11,6 +11,9 @@ from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 
+# from utils give library functions
+from utils import json_reader
+
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
 
@@ -20,23 +23,28 @@ class Preprocess:
 		self.stopwords = stopwords
 		self.feature_technique = feature_technique
 
-		with open(file_path) as f:
-			raw_data = f.readlines()
+		iter_over_data = json_reader(file_path)
 
 		self.data = {"text": [], "label": []}
-		with click.progressbar(range(len(raw_data))) as progressbar:
-			for i in progressbar:
-				raw_datum = ast.literal_eval(raw_data[i].strip())
+		# with click.progressbar(range(len(raw_data))) as progressbar:
+		while True:
+			try:
+				raw_datum = next(iter_over_data)
+				# print("[!]")
+			except StopIteration:
+				break
+			# raw_datum = ast.literal_eval(raw_data[i].strip())
 
-				self.data["text"].append(self.normalise_data(raw_datum["text"]))
-				self.data["label"].append(int(raw_datum["stars"]))
+			self.data["text"].append(self.normalise_data(raw_datum["text"]))
+			self.data["label"].append(int(raw_datum["stars"]))
 
 		self.num_examples = len(self.data["text"])
 		
 		if self.verbose:
 			print("[#] Data preprocessed! ")
 			print("[>] Number of examples {}".format(self.num_examples))
-			print("\n[>] Sample example: {} \n {}\n".format(self.data["text"][0], self.data["label"][0]))
+			# print("\n[>] Sample example: {} \n {}\n".format(self.data["text"][0], self.data["label"][0]))
+
 
 	def train_and_test(self, ratio=0.8):
 		"""Divide `self.data` into train and test based on ratio"""
