@@ -1,6 +1,7 @@
 import re
 import ast
 import json
+import click
 import pprint
 
 import nltk
@@ -12,30 +13,30 @@ from nltk.stem.wordnet import WordNetLemmatizer
 
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
-	def __init__(self, file_path, verbose=False, stem=False, stopwords=False):
+
+	def __init__(self, file_path, verbose=False, stem=False, stopwords=False, feature_technique="word"):
 		self.verbose = verbose
 		self.stem = stem
 		self.stopwords = stopwords
-		self.feature_technique = "advanced"
+		self.feature_technique = feature_technique
 
 		with open(file_path) as f:
 			raw_data = f.readlines()
 
-		raw_data = [ast.literal_eval(x.strip()) for x in raw_data]
+		self.data = {"text": [], "label": []}
+		with click.progressbar(range(len(raw_data))) as progressbar:
+			for i in progressbar:
+				raw_datum = ast.literal_eval(raw_data[i].strip())
 
-		data = {"text": [], "label": []}
-		for raw_datum in raw_data:
-			data["text"].append(self.normalise_data(raw_datum["text"]))
-			data["label"].append(int(raw_datum["stars"]))
+				self.data["text"].append(self.normalise_data(raw_datum["text"]))
+				self.data["label"].append(int(raw_datum["stars"]))
 
-		self.data = data
 		self.num_examples = len(self.data["text"])
 		
 		if self.verbose:
 			print("[#] Data preprocessed! ")
 			print("[>] Number of examples {}".format(self.num_examples))
-			print("[>] Sample example: {} \n {}\n".format(self.data["text"][0], self.data["label"][0]))
-
+			print("\n[>] Sample example: {} \n {}\n".format(self.data["text"][0], self.data["label"][0]))
 
 	def train_and_test(self, ratio=0.8):
 		"""Divide `self.data` into train and test based on ratio"""
@@ -77,13 +78,13 @@ class Preprocess:
 			# Feature: Only words
 
 			text = self.apostrophe_normalisation(text)
-			tokens = self.punctuation_remove(word_tokenize(text))
-			tokens = [x.lower() for x in tokens]
+			text = self.punctuation_remove(word_tokenize(text))
+			text = [x.lower() for x in text]
 			if self.stopwords:
-				tokens = self.stopwords_removal(tokens)
+				text = self.stopwords_removal(text)
 			if self.stem:
-				tokens = self.stemming(tokens)
-			return tokens
+				text = self.stemming(text)
+			return text
 		elif self.feature_technique is 'bigram':
 			# Feature: Words + N-grams
 
@@ -180,7 +181,7 @@ def count_frequency(tokens):
 
 
 if __name__ == '__main__':
-	processing = Preprocess()
-	print(processing.data)
+	processing = Preprocess(file_path="./dataset/train.json", verbose=True, stem=False, stopwords=False, feature_technique="word")
+	# print(processing.data)
 
 
