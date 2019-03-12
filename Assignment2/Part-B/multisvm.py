@@ -293,5 +293,5 @@ def main_use_libsvm(verbose=True):
 
 
 if __name__ == '__main__':
-	# main_use_libsvm(verbose=True)
-	main(verbose=True)
+	main_use_libsvm(verbose=True)
+	# main(verbose=True)
