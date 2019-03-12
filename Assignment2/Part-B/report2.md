@@ -15,3 +15,43 @@
 [!] testing examples: 19999
 [*] Accuracy on train set: 0.99920
 [*] Test Error Rate: 0.00080
+
+
+
+----------------
+NB
+
+[#] Data preprocessed! 
+[>] Number of examples 534872
+[#] Data preprocessed! 
+[>] Number of examples 133718
+
+[>] Starting training with 534872 examples!
+[#] Training complete!
+
+
+[>] Starting the testing with 133718 examples!
+[#] Testing complete!
+
+[*] Accuracy on test set: 0.5572
+
+[>] Starting the testing with 534872 examples!
+[#] Testing complete!
+
+[*] Accuracy on train set: 0.5621
+
+[>] Predicting Randomly with 133718 examples!
+[#] Testing complete!
+
+[*] Accuracy on test set (predicting radomly): 0.1997
+
+[>] Predicting Majority with 133718 examples!
+[#] Testing complete!
+
+[*] Accuracy on test set (predicting majority): 0.4399
+/home/student_bharti/.local/lib/python3.6/site-packages/matplotlib/figure.py:445: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  % get_backend())
+[>] Saving confusion matrix as confusion_matrix_test_d.png
+
+
+----------------------------------------
