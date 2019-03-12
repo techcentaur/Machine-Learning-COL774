@@ -33,9 +33,9 @@ class Processing:
 
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(1)
-			i+=1
-			if i>100:
-				break
+			# i+=1
+			# if i>500:
+			# 	break
 
 		i = 0
 		for index, rows in df.iterrows():
@@ -46,9 +46,9 @@ class Processing:
 
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(-1)
-			i+=1
-			if i>100:
-				break
+			# i+=1
+			# if i>20:
+			# 	break
 
 		# set data (train data)
 		self.data = data
@@ -76,9 +76,9 @@ class Processing:
 
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(label1)
-			i+=1
-			if i>10:
-				break
+			# i+=1
+			# if i>10:
+			# 	break
 
 		i=0
 		for index, rows in df.iterrows():
@@ -89,9 +89,9 @@ class Processing:
 
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(label2)
-			i+=1
-			if i>10:
-				break
+			# i+=1
+			# if i>10:
+			# 	break
 
 		# set data (train data)
 		self.testdata = testdata
@@ -137,9 +137,9 @@ class ProcessingForMulti:
 			l = list(rows)
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(l[784])
-			i+=1
-			if i>300:
-				break
+			# i+=1
+			# if i>300:
+			# 	break
 
 		data["data"] = np.array(data["data"])
 		data["label"] =  np.array(data["label"])
@@ -157,9 +157,9 @@ class ProcessingForMulti:
 			l = list(rows)
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(l[784])
-			i+=1
-			if i>50:
-				break
+			# i+=1
+			# if i>50:
+			# 	break
 
 		testdata["data"] = np.array(testdata["data"])
 		testdata["label"] =  np.array(testdata["label"])

@@ -145,10 +145,12 @@ class SVM:
 
 
 class SVM_libsvm:
-	def __init__(self, kernel_type='gaussian', C=1.0):
+	def __init__(self, kernel_type='gaussian', C=1.0, gamma=0.05):
 		self.kernel_type = kernel_type
 		self.C = C
-		self.gamma = 0.05
+		self.gamma = gamma
+
+		print("[!] Kernel: {} | Gamma: {} | C: {}".format(self.kernel_type, self.gamma, self.C))
 
 
 	def fit(self, data):
@@ -214,7 +216,7 @@ def main():
 def main_use_libsvm():
 	p = Processing(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
 
-	s = SVM_libsvm(kernel_type='gaussian', C=1.0)
+	s = SVM_libsvm(kernel_type='gaussian', C=1.0, gamma=0.05)
 	s.fit(p.data)
 
 	predicted_labels = s.predict(p.testdata, p.label1, p.label2)
@@ -228,5 +230,5 @@ def main_use_libsvm():
 	print('[!] Computational time (of training): {}'.format(s.time_taken))
 
 if __name__ == '__main__':
-	# main_use_libsvm()
-	main()
+	main_use_libsvm()
+	# main()

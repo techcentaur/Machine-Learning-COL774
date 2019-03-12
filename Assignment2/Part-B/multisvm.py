@@ -45,7 +45,10 @@ class MultiSVM:
 		self.num_classes = len(np.unique(data["label"]))
 		
 		start_time = timeit.default_timer()
-		
+
+		if self.verbose:
+			print("[!] Training examples: {}".format(len(data["data"])))
+
 		# one-vs-one classifier method
 		for i in range(self.num_classes):
 			for j in range(i+1, self.num_classes):
@@ -78,7 +81,7 @@ class MultiSVM:
 		num_test_data = len(testdata["data"])
 
 		if self.verbose:
-			print("[!] testing examples: {}".format(num_test_data))
+			print("[!] Testing examples: {}".format(num_test_data))
 
 		svm_instances = (self.num_classes * (self.num_classes-1))/2
 		predictions = np.zeros((num_test_data, self.num_classes))
@@ -115,7 +118,7 @@ class MultiSVM:
 		if not os.path.exists("./figures"):
 			os.makedirs("./figures")
 
-		fig, ax = plt.subplots()
+		fig, ax = plt.subplots(figsize=(18, 18))
 		sns.heatmap(cm, annot=True, ax = ax, cmap='Greens'); #annot=True to annotate cells
 
 		# labels, title and ticks
@@ -134,7 +137,7 @@ class MultiSVM:
 
 
 class MultiSVM_libsvm:
-	def __init__(self, verbose=False, kernel_type='gaussian', C = 1.0):
+	def __init__(self, verbose=True, kernel_type='gaussian', C = 1.0):
 		# parameters
 		self.gamma = 0.05
 		self.C = C
@@ -218,7 +221,7 @@ class MultiSVM_libsvm:
 		if not os.path.exists("./figures"):
 			os.makedirs("./figures")
 
-		fig, ax = plt.subplots()
+		fig, ax = plt.subplots(figsize=(18, 18))
 		sns.heatmap(cm, annot=True, ax = ax, cmap='Greens'); #annot=True to annotate cells
 
 		# labels, title and ticks
@@ -235,7 +238,7 @@ class MultiSVM_libsvm:
 		print("[>] Saving confusion matrix as confusion_matrix_{}.png in ./figures folder in the directory".format(name))
 
 
-
+# use CVXOPT
 def main(verbose=True):
 	# processing for training
 	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
@@ -249,12 +252,14 @@ def main(verbose=True):
 	# draw confusion matrix for test data only
 	m_svm.draw_confusion_matrix(p.testdata["label"], predicted_labels, name='multisvm_cvxopt_test_data')
 
+	# train accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
 	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
 	print('[!] Computational time (of training): {}'.format(m_svm.time_taken))
 
+	# test accuracy
 	predicted_labels = m_svm.predict(p.data)
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.data["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on train set: {0:.5f}".format(accuracy))
@@ -288,5 +293,5 @@ def main_use_libsvm(verbose=True):
 
 
 if __name__ == '__main__':
-	main_use_libsvm(verbose=False)
-	# main(verbose=False)
+	# main_use_libsvm(verbose=True)
+	main(verbose=True)
