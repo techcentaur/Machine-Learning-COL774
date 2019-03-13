@@ -3,41 +3,21 @@
 # This should train classifier using train data
 #and report accuracy and macro f-score on test data
 
+# Here, 'binary_or_multi_class' is 0 for binary
+# classification and 1 for multi-class. 
+# 'part_num' is part number which can be a-c for binary
+# classification and a-d for multi-class.
+
 if [ "$1" == "1" ]
 then
-	if ["$4" == "a"]
-		python3 nb.py $2 $3 $4
-	elif ["$4" == "b"]
-		python3 nb.py $2 $3 $4
-	elif ["$4" == "c"]
-		python3 nb.py $2 $3 $4
-	elif ["$4" == "d"]
-		python3 nb.py $2 $3 $4
-	elif ["$4" == "e"]
-		python3 nb.py $2 $3 $4
-	elif ["$4" == "f"]
-		python3 nb.py $2 $3 $4
-	elif ["$4" == "g"]
-		python3 nb.py $2 $3 $4
+	python3 ./Part-A/nb.py $2 $3 $4
 elif [ "$1" == "2" ]
 then
-	if ["$4" == "0"]
-		if ["$5" == "a"]
-			python3 svm_python.py $2 $3 $4 $5
-		elif ["$5" == "b"]
-			python3 svm_python.py $2 $3 $4 $5
-		elif ["$5" == "c"]
-			python3 svm_python.py $2 $3 $4 $5
-		fi
-	elif ["$4" == "1"]
-		if ["$5" == "a"]
-			python3 multisvm.py $2 $3 $4 $5
-		elif ["$5" == "b"]
-			python3 multisvm.py $2 $3 $4 $5
-		elif ["$5" == "c"]
-			python3 multisvm.py $2 $3 $4 $5
-		elif ["$5" == "d"]
-			python3 multisvm.py $2 $3 $4 $5
-		fi
+	if [ "$4" == "0" ]
+	then
+		python3 ./Part-B/svm_python.py $2 $3 $5
+	elif [ "$4" == "1" ]
+	then
+		python3 ./Part-B/multisvm.py $2 $3 $5
 	fi
 fi
