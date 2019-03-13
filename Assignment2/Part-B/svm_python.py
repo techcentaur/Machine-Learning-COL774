@@ -1,7 +1,7 @@
 # SVM Model
 # add libsvm in path
 import sys
-sys.path.append('/home/student_bharti/Ankit/Machine-Learning-COL774/Assignment2/Part-B/libsvm/python')
+sys.path.append('./Part-B/libsvm/python')
 
 import timeit
 import numpy as np 
@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from cvxopt import (matrix, solvers)
 from process import Processing
+from sklearn.metrics import f1_score
 
 
 class SVM:
@@ -144,6 +145,11 @@ class SVM:
 		return np.sign(pred)
 
 
+	def f1_score(self, actual_y, predicted_y):
+		sc = (f1_score(actual_y, predicted_y, average='macro'))
+		print("[.] Macro Average Score: {}".format(sc))
+
+
 class SVM_libsvm:
 	def __init__(self, kernel_type='gaussian', C=1.0, gamma=0.05):
 		self.kernel_type = kernel_type
@@ -189,33 +195,40 @@ class SVM_libsvm:
 		labels =  svm_predict(testdata["label"], testdata["data"], self.model)
 		return np.array(labels[0])
 
+	def f1_score(self, actual_y, predicted_y):
+		sc = (f1_score(actual_y, predicted_y, average='macro'))
+		print("[.] Macro Average Score: {}".format(sc))
 
 # main function for svm binary classification
-def main():
+def main(kernel, trainfile, testfile):
 	# processing for training
-	p = Processing(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
-	# p.process_data()
+	p = Processing(train_file=trainfile, test_file=testfile)
 
 	# create model
-	s = SVM(verbose=True, kernel_type='linear')
+	if kernel == 0:
+		s = SVM(verbose=True, kernel_type='linear')
+	else:
+		s = SVM(verbose=True, kernel_type='gaussian')
+
 	s.fit(p.data)
 
-	print("[*] Bias: {}".format(str(s.bias)))	
+	# print("[*] Bias: {}".format(str(s.bias)))	
 	# make prediction
 	predicted_labels = s.predict(p.testdata)
 
 	# get accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
-	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
+	s.f1_score(p.testdata["label"], predicted_labels)
+	# print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
-	print('[!] Computational time (of training): {}'.format(s.time_taken))
+	# print('[!] Computational time (of training): {}'.format(s.time_taken))
 
 	# print("[*] Support Vectors: \n", s.SV_X[0])
 
 # use LIBSVM
-def main_use_libsvm():
-	p = Processing(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
+def main_use_libsvm(trainfile, testfile):
+	p = Processing(train_file=trainfile, test_file=testfile)
 
 	s = SVM_libsvm(kernel_type='gaussian', C=1.0, gamma=0.05)
 	s.fit(p.data)
@@ -225,11 +238,29 @@ def main_use_libsvm():
 	# print(p.testdata["label"])
 
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
-	print("\n[*] Accuracy on test set: {0:.5f}".format(accuracy))
-	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
+	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
+	s.f1_score(p.testdata["label"], predicted_labels)
 
-	print('[!] Computational time (of training): {}'.format(s.time_taken))
+	# print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
+
+	# print('[!] Computational time (of training): {}'.format(s.time_taken))
 
 if __name__ == '__main__':
-	main_use_libsvm()
-	# main()
+	# main_use_libsvm()
+	print("[*] Binary Classification")
+
+	trainfile = str(sys.argv[1]) # train file
+	testfile = str(sys.argv[2]) # test file
+	part_num = str(sys.argv[3]) # part number
+
+	if part_num.lower() == "a":
+		print("[*] Part-a | Linear Kernel | Using CVXOPT!")
+		main(0, trainfile, testfile)
+	elif part_num.lower() == "b":
+		print("[*] Part-b | Gaussian Kernel | Using CVXOPT!")
+		main(1, trainfile, testfile)
+	elif part_num.lower() == "c":
+		print("[*] Part-C | Linear + Gaussian | Using LIBSVM!")
+		main_use_libsvm(trainfile, testfile)
+	else:
+		print("[!] Wrong Part Number [!]")

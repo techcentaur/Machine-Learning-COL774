@@ -1,6 +1,6 @@
 """Multi-class classification SVM"""
 import sys
-sys.path.append('/home/student_bharti/Ankit/Machine-Learning-COL774/Assignment2/Part-B/libsvm/python')
+sys.path.append('./Part-B/libsvm/python')
 
 from svmutil import *
 
@@ -240,9 +240,57 @@ class MultiSVM_libsvm:
 
 
 # use CVXOPT
-def main(verbose=True):
+def main_a(trainfile, testfile, verbose=True):
+	p = ProcessingForMulti(train_file=trainfile, test_file=testfile)
+
+	m_svm = MultiSVM(verbose, 'gaussian', 0.05, 1.0)
+	m_svm.fit(p.data)
+
+	predicted_labels = m_svm.predict(p.testdata)
+
+	# test accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.5f}".format(accuracy))
+
+	# train accuracy
+	predicted_labels = m_svm.predict(p.data)
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.data["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on train set: {0:.5f}".format(accuracy))
+
+
+def main_b(trainfile, testfile, verbose=True, C=1.0, validation=False):
+	p = ProcessingForMulti(train_file=trainfile, test_file=testfile, validation=validation)
+
+	s = MultiSVM_libsvm(verbose, C, kernel_type='gaussian')
+	s.fit(p.data)
+
+	predicted_labels = s.predict(p.testdata)
+
+	# test accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
+	print("\n[*] Accuracy on test set: {0:.5f}".format(accuracy))
+
+	# train accuracy
+	predicted_labels = s.predict(p.data)
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.data["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on train set: {0:.5f}".format(accuracy))
+
+
+def main_c(trainfile, testfile, verbose=True, C=1.0, validation=False):
+	p = ProcessingForMulti(train_file=trainfile, test_file=testfile, validation=validation)
+
+	s = MultiSVM_libsvm(verbose, C, kernel_type='gaussian')
+	s.fit(p.data)
+
+	predicted_labels = s.predict(p.testdata)
+
+	s.draw_confusion_matrix(p.testdata["label"], predicted_labels, name='multisvm_libsvm_test_data_new')
+	
+
+# use CVXOPT
+def main(trainfile, testfile, verbose=True):
 	# processing for training
-	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv")
+	p = ProcessingForMulti(train_file=trainfile, test_file=testfile)
 
 	# apply model to it
 	m_svm = MultiSVM(verbose, 'gaussian', 0.05, 1.0)
@@ -268,16 +316,13 @@ def main(verbose=True):
 
 
 # use LIBSVM
-def main_use_libsvm(verbose=True, C=1.0, validation=False):
-	p = ProcessingForMulti(train_file="./dataset/train.csv", test_file="./dataset/test.csv", validation=validation)
+def main_use_libsvm(trainfile, testfile, verbose=True, C=1.0, validation=False):
+	p = ProcessingForMulti(train_file=trainfile, test_file=testfile, validation=validation)
 
 	s = MultiSVM_libsvm(verbose, C, kernel_type='gaussian')
 	s.fit(p.data)
 
 	predicted_labels = s.predict(p.testdata)
-
-	# draw confusion matrix for test data only
-	# s.draw_confusion_matrix(p.testdata["label"], predicted_labels, name='multisvm_libsvm_test_data')
 	
 	# test accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.testdata["label"][i]])) / float(len(predicted_labels))
@@ -285,12 +330,6 @@ def main_use_libsvm(verbose=True, C=1.0, validation=False):
 	print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
 	print('[!] Computational time (of training): {}'.format(s.time_taken))
-
-	# # train accuracy
-	# predicted_labels = s.predict(p.data)
-	# accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == p.data["label"][i]])) / float(len(predicted_labels))
-	# print("[*] Accuracy on train set: {0:.5f}".format(accuracy))
-	# print("[*] Test Error Rate: {0:.5f}".format(1-accuracy))
 
 	# validation set accuracy
 	predicted_labels = s.predict(p.validationdata)
@@ -301,8 +340,7 @@ def main_use_libsvm(verbose=True, C=1.0, validation=False):
 	return [accuracy, accuracy2]
 
 # this is for variable values of c
-def main_with_variable_c():
-
+def main_d(trainfile, testfile):
 	c_values = [0.00001, 0.001, 1, 5, 10]
 	accuracy_valid_set = []
 	accuracy_test_set = []
@@ -310,18 +348,10 @@ def main_with_variable_c():
 	for c_value in c_values:
 
 		print("[!] For C-value: {}".format(c_value))
-		acc = main_use_libsvm(verbose=True, C=c_value, validation=True)
+		acc = main_use_libsvm(trainfile, testfile, verbose=True, C=c_value, validation=True)
 
 		accuracy_test_set.append(acc[0])
 		accuracy_valid_set.append(acc[1])
-
-	# with open('values.txt', 'w') as f:
-	# 	f.write("Test Set")
-	# 	f.write(str(accuracy_test_set) + "\n")
-	# 	f.write("Validation Set")
-	# 	f.write(str(accuracy_valid_set) + "\n")
-	# 	f.write("C-Values")
-	# 	f.write(str(c_values) + "\n")
 
 	fig, ax = plt.subplots(figsize=(12, 12))
 
@@ -338,16 +368,32 @@ def main_with_variable_c():
 	ax.set_ylim(bottom=0)
 	ax.set_xscale('log')
 
-
 	if not os.path.exists("./figures"):
 		os.makedirs("./figures")
 
 	plt.savefig("./figures/validation_test_vs_c_values.png")
-
 	print("[!] Data plotted and saved in the directory!")
+
 
 if __name__ == '__main__':
 
-	# main_use_libsvm(verbose=True)
-	# main(verbose=True)
-	main_with_variable_c()
+	print("[*] Multi-class Classification")
+
+	trainfile = str(sys.argv[1]) # train file
+	testfile = str(sys.argv[2]) # test file
+	part_num = str(sys.argv[3]) # part number
+
+	if part_num.lower() == "a":
+		print("[*] Part-a | Gaussian Kernel | Using CVXOPT!")
+		main_a(trainfile, testfile)
+	elif part_num.lower() == "b":
+		print("[*] Part-b | Gaussian Kernel | Using LIBSVM!")
+		main_b(trainfile, testfile)
+	elif part_num.lower() == "c":
+		print("[*] Part-c | Gaussian | Using LIBSVM | Draw Confusion!")
+		main_c(trainfile, testfile)
+	elif part_num.lower() == "d":
+		print("[*] Part-d | Using LIBSVM | C-values vs Validation set (and test set) graph!")
+		main_d(trainfile, testfile)
+	else:
+		print("[!] Wrong Part Number [!]")
