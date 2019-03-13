@@ -99,38 +99,37 @@ class Preprocess:
 			# normalise the apostrophe
 			text = self.apostrophe_normalisation(text)
 			# remove punctuation
-			tokens = self.punctuation_remove(word_tokenize(text))
+			text = self.punctuation_remove(word_tokenize(text))
 			# convert to lowercase
-			tokens = [x.lower() for x in tokens]
+			text = [x.lower() for x in text]
 
 			if self.stopwords:
-				tokens = self.stopwords_removal(tokens)
+				text = self.stopwords_removal(text)
 			if self.stem:
-				tokens = self.lemmatizer(tokens)		
+				text = self.lemmatizer(text)		
 
-			bigrms = list(nltk.bigrams(tokens))
+			bigrms = list(nltk.bigrams(text))
 			# trigrms = list(nltk.trigrams(tokens))
-
-			tokens = tokens + [' '.join([x, y]) for (x,y) in bigrms]
+			# text = []
+			text = text + [' '.join([x, y]) for (x,y) in bigrms]
 			# tokens = tokens + [' '.join([x, y, z]) for (x,y,z) in trigrms]
-			
-			return tokens
+			return text
 
 		elif self.feature_technique is 'advanced':
 			# Feature: Word Advanced
 			text = self.apostrophe_normalisation(text)
-			tokens = self.punctuation_remove(word_tokenize(text))
-			tokens = [x.lower() for x in tokens]
+			text = self.punctuation_remove(word_tokenize(text))
+			text = [x.lower() for x in text]
 			if self.stopwords:
-				tokens = self.stopwords_removal(tokens)
+				text = self.stopwords_removal(text)
 			if self.stem:
-				tokens = self.lemmatizer(tokens)
+				text = self.lemmatizer(text)
 
-			tagged_toks = (nltk.pos_tag(tokens))
+			tagged_toks = (nltk.pos_tag(text))
 			tags = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
-			tokens = [x for (x,y) in tagged_toks if y in tags]
+			text = [x for (x,y) in tagged_toks if y in tags]
 
-			return tokens
+			return text
 
 	def lemmatizer(self, tokens):
 		"""HMB while I lemmatize tokens with nltk"""
