@@ -141,9 +141,9 @@ class ProcessingForMulti:
 			l = list(rows)
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(l[784])
-			i+=1
-			if i>1000:
-				break
+			# i+=1
+			# if i>1000:
+			# 	break
 
 		data["data"] = np.array(data["data"])
 		data["label"] =  np.array(data["label"])
@@ -161,9 +161,9 @@ class ProcessingForMulti:
 			l = list(rows)
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(l[784])
-			i+=1
-			if i>50:
-				break
+			# i+=1
+			# if i>50:
+			# 	break
 
 		testdata["data"] = np.array(testdata["data"])
 		testdata["label"] =  np.array(testdata["label"])
