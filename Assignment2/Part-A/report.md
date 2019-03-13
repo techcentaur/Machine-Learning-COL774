@@ -95,3 +95,8 @@ bigram
 [.] Score per Class: [0.70108634 0.0009214  0.00219464 0.10909906 0.68081332]
 [.] Macro Average Score: 0.2988229510920756
 [!] Only stemming and stopwords + Adavanced detection!
+
+
+[*] Accuracy on test set: 0.4956
+[.] Score per Class: [0.51471566 0.         0.         0.01433264 0.64033074]
+[.] Macro Average Score: 0.23387580650477952

@@ -12,7 +12,7 @@ from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 
 # from utils give library functions
-from utils import json_reader
+from utils import json_reader, getStemmedDocuments
 
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
@@ -25,9 +25,12 @@ class Preprocess:
 
 		iter_over_data = json_reader(file_path)
 
+		print("[*] Feature Technique: {}".format(self.feature_technique))
 		self.data = {"text": [], "label": []}
 		# with click.progressbar(range(len(raw_data))) as progressbar:
+		i = 0
 		while True:
+			# i += 1
 			try:
 				raw_datum = next(iter_over_data)
 				# print("[!]")
@@ -37,6 +40,9 @@ class Preprocess:
 
 			self.data["text"].append(self.normalise_data(raw_datum["text"]))
 			self.data["label"].append(int(raw_datum["stars"]))
+
+			# if i>1000:
+			# 	break
 
 		self.num_examples = len(self.data["text"])
 		
@@ -81,32 +87,34 @@ class Preprocess:
 
 	def normalise_data(self, text):
 		"""Given a string convert into tokens based on some feature extraction"""
+		if self.feature_technique is 'normal':
+			text = self.apostrophe_normalisation(text)
+			text = self.punctuation_remove(nltk.word_tokenize(text))
 
-		if self.feature_technique is 'word':
+			return text
+
+		elif self.feature_technique is 'word':
 			# Feature: Only words
 
 			text = self.apostrophe_normalisation(text)
-			text = self.punctuation_remove(word_tokenize(text))
+			# if self.stopwords:
+			# 	text = self.stopwords_removal(text)
+			# if self.stem:
+			text = getStemmedDocuments(text)
+			text = self.punctuation_remove(text)
 			text = [x.lower() for x in text]
-			if self.stopwords:
-				text = self.stopwords_removal(text)
-			if self.stem:
-				text = self.stemming(text)
+			# 	text = self.lemmatizer(text)
 			return text
 		elif self.feature_technique is 'bigram':
 			# Feature: Words + N-grams
 
-			# normalise the apostrophe
 			text = self.apostrophe_normalisation(text)
-			# remove punctuation
-			text = self.punctuation_remove(word_tokenize(text))
-			# convert to lowercase
+			# if self.stopwords:
+			# 	text = self.stopwords_removal(text)
+			# if self.stem:
+			text = getStemmedDocuments(text)
+			text = self.punctuation_remove(text)
 			text = [x.lower() for x in text]
-
-			if self.stopwords:
-				text = self.stopwords_removal(text)
-			if self.stem:
-				text = self.lemmatizer(text)		
 
 			bigrms = list(nltk.bigrams(text))
 			# trigrms = list(nltk.trigrams(tokens))
@@ -117,13 +125,16 @@ class Preprocess:
 
 		elif self.feature_technique is 'advanced':
 			# Feature: Word Advanced
+			
 			text = self.apostrophe_normalisation(text)
-			text = self.punctuation_remove(word_tokenize(text))
+			# if self.stopwords:
+			# 	text = self.stopwords_removal(text)
+			# if self.stem:
+			# text = getStemmedDocuments(text)
+			text = self.lemmatizer(word_tokenize(text))
+			text = self.stopwords_removal(text)
+			text = self.punctuation_remove(text)
 			text = [x.lower() for x in text]
-			if self.stopwords:
-				text = self.stopwords_removal(text)
-			if self.stem:
-				text = self.lemmatizer(text)
 
 			tagged_toks = (nltk.pos_tag(text))
 			tags = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
@@ -158,10 +169,13 @@ class Preprocess:
 	def punctuation_remove(self, tokens):
 		"""given a list of tokens, remove the punctuations, and return tokens"""
 
-		punctuation_list = list(punctuation)
-		for i in tokens:
-			if i in punctuation_list:
-				tokens.remove(i)
+		punctuation_list = list(punctuation) + ["..."]
+
+		tokens = [tok for tok in tokens if tok not in punctuation_list]
+		tokens = [tok for tok in tokens if not tok.isdigit()]
+		# for i in tokens:
+		# 	if i in punctuation_list:
+		# 		tokens.remove(i)
 		return tokens
 
 	def stemming(self, tokens):
@@ -188,7 +202,7 @@ def count_frequency(tokens):
 
 
 if __name__ == '__main__':
-	processing = Preprocess(file_path="./dataset/train.json", verbose=True, stem=False, stopwords=False, feature_technique="word")
-	# print(processing.data)
+	processing = Preprocess(file_path="./dataset/sample.json", verbose=True, stem=True, stopwords=True, feature_technique="word")
+	print(processing.data)
 
 
