@@ -197,9 +197,10 @@ def main():
 	# p.process_data()
 
 	# create model
-	s = SVM(verbose=True, kernel_type='gaussian')
+	s = SVM(verbose=True, kernel_type='linear')
 	s.fit(p.data)
-	
+
+	print("[*] Bias: {}".format(str(s.bias)))	
 	# make prediction
 	predicted_labels = s.predict(p.testdata)
 
