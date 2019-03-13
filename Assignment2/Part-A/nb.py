@@ -1,6 +1,7 @@
 import re
 import os
 import math
+import sys
 
 from random import randint
 
@@ -176,16 +177,42 @@ def main(verbose):
 
 	model.draw_confusion_matrix(process2.data["label"], predicted_labels, num='test_d_2')
 
-	"""
+
+
+def main_a(verbose, trainfile, testfile):
+	# create instance of Preprocess of training set
+	process1 = Preprocess(trainfile, verbose, stem=False, stopwords=False)
+	process2 = Preprocess(testfile, verbose, stem=False, stopwords=False)
+	
+	# fit model for naive bayes
+	model = NaiveBayes(process1, verbose)
+	model.fit(process1.data)
+
+	# predict on test data
+	predicted_labels = model.predict(process2.data, text_normalised=True)
+	# get accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
 
 	# predict on train data
 	predicted_labels = model.predict(process1.data, text_normalised=True)
-
 	# get accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process1.data["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on train set: {0:.4f}".format(accuracy))
-	# print("[*] Test Error Rate: {}\n".format(1-accuracy))
+
+	model.f1_score(process2.data["label"], predicted_labels)	
+
+	return accuracy
+
+
+def main_b(verbose, trainfile, testfile):
+	# create instance of Preprocess of training set
+	process1 = Preprocess(trainfile, verbose, stem=False, stopwords=False)
+	process2 = Preprocess(testfile, verbose, stem=False, stopwords=False)
 	
+	# fit model for naive bayes
+	model = NaiveBayes(process1, verbose)
+	model.fit(process1.data)
 
 	# predicting randomly	
 	predicted_labels = model.predict_random(process2.data, text_normalised=True)
@@ -202,49 +229,29 @@ def main(verbose):
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set (predicting majority): {0:.4f}".format(accuracy))
 
-
-	# draw confusion matrix
-	model.draw_confusion_matrix(process2.data["label"], predicted_labels, num='test_d')
-	# model.f1_score(process2.data["label"], predicted_labels)	
-
-	# draw confusion matrix
-	# model.draw_confusion_matrix(process1.data["label"], predicted_labels, num='train_d')
-	# model.f1_score(process1.data["label"], predicted_labels)	
-
-	"""
-
-def main1(verbose):
-	# create instance of Preprocess of training set
-	process1 = Preprocess('./dataset/train.json', verbose, stem=True, stopwords=True)
-	process2 = Preprocess('./dataset/test.json', verbose, stem=True, stopwords=True)
-	
-	# fit model for naive bayes
-	model = NaiveBayes(process1, verbose)
-	model.fit(process1.data)
-
-	# predict on test data
-	predicted_labels = model.predict(process2.data, text_normalised=True)
-
-	# get accuracy
-	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
-	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
-
 	model.f1_score(process2.data["label"], predicted_labels)	
-
-
-	# with open('log.txt', 'w') as f:
-	# 	f.write(str(model.class_words))
-	# 	f.write(str(model.class_priors))
-	# 	f.write(str(model.labels))
-	# 	f.write(str(model.vocabulary))
-	# 	# f.write(str(model.class_words))
 
 	return accuracy
 
-def main2(verbose):
+
+
+def main_c(verbose, trainfile, testfile):
 	# create instance of Preprocess of training set
-	process1 = Preprocess('./dataset/train.json', verbose, stem=True, stopwords=True, feature_technique="bigram")
-	process2 = Preprocess('./dataset/test.json', verbose, stem=True, stopwords=True, feature_technique="bigram")
+	process1 = Preprocess(trainfile, verbose, stem=False, stopwords=False, feature_technique="normal")
+	process2 = Preprocess(testfile, verbose, stem=False, stopwords=False, feature_technique="normal")
+	
+	model = NaiveBayes(process1, verbose)
+	model.fit(process1.data)
+
+	# predict on test data
+	predicted_labels = model.predict(process2.data, text_normalised=True)
+	model.draw_confusion_matrix(process2.data["label"], predicted_labels, num='test_d_3')
+
+
+def main_d(verbose, trainfile, testfile):
+	# create instance of Preprocess of training set
+	process1 = Preprocess(trainfile, verbose, stem=True, stopwords=True)
+	process2 = Preprocess(testfile, verbose, stem=True, stopwords=True)
 	
 	# fit model for naive bayes
 	model = NaiveBayes(process1, verbose)
@@ -252,7 +259,6 @@ def main2(verbose):
 
 	# predict on test data
 	predicted_labels = model.predict(process2.data, text_normalised=True)
-
 	# get accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
@@ -261,10 +267,11 @@ def main2(verbose):
 
 	return accuracy
 
-def main3(verbose):
+
+def main_e(verbose, trainfile, testfile):
 	# create instance of Preprocess of training set
-	process1 = Preprocess('./dataset/train.json', verbose, stem=True, stopwords=True, feature_technique="advanced")
-	process2 = Preprocess('./dataset/test.json', verbose, stem=True, stopwords=True, feature_technique="advanced")
+	process1 = Preprocess(trainfile, verbose, stem=True, stopwords=True, feature_technique="bigram")
+	process2 = Preprocess(testfile, verbose, stem=True, stopwords=True,  feature_technique="bigram")
 	
 	# fit model for naive bayes
 	model = NaiveBayes(process1, verbose)
@@ -272,7 +279,6 @@ def main3(verbose):
 
 	# predict on test data
 	predicted_labels = model.predict(process2.data, text_normalised=True)
-
 	# get accuracy
 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
@@ -280,72 +286,94 @@ def main3(verbose):
 	model.f1_score(process2.data["label"], predicted_labels)	
 
 	return accuracy
+
+def main_e_2(verbose, trainfile, testfile):
+	# create instance of Preprocess of training set
+	process1 = Preprocess(trainfile, verbose, stem=True, stopwords=True, feature_technique="advanced")
+	process2 = Preprocess(testfile, verbose, stem=True, stopwords=True,  feature_technique="advanced")
+	
+	# fit model for naive bayes
+	model = NaiveBayes(process1, verbose)
+	model.fit(process1.data)
+
+	# predict on test data
+	predicted_labels = model.predict(process2.data, text_normalised=True)
+	# get accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
+
+	model.f1_score(process2.data["label"], predicted_labels)	
+
+	return accuracy
+
+def main_f(verbose, trainfile, testfile):
+	# create instance of Preprocess of training set
+	process1 = Preprocess(trainfile, verbose, stem=True, stopwords=True, feature_technique="bigram")
+	process2 = Preprocess(testfile, verbose, stem=True, stopwords=True,  feature_technique="bigram")
+	
+	# fit model for naive bayes
+	model = NaiveBayes(process1, verbose)
+	model.fit(process1.data)
+
+	# predict on test data
+	predicted_labels = model.predict(process2.data, text_normalised=True)
+	# get accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
+
+	model.f1_score(process2.data["label"], predicted_labels)	
+
+	return accuracy
+
+def main_g(verbose, trainfile, testfile):
+	# create instance of Preprocess of training set
+	process1 = Preprocess(trainfile, verbose, stem=True, stopwords=True, feature_technique="bigram")
+	process2 = Preprocess(testfile, verbose, stem=True, stopwords=True,  feature_technique="bigram")
+	
+	# fit model for naive bayes
+	model = NaiveBayes(process1, verbose)
+	model.fit(process1.data)
+
+	# predict on test data
+	predicted_labels = model.predict(process2.data, text_normalised=True)
+	# get accuracy
+	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
+	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
+
+	model.f1_score(process2.data["label"], predicted_labels)	
+
+	return accuracy
+
 
 if __name__ == '__main__':
 
-	main(True)
+	print("[*] Naive Bayes: Part-A")
 
-	# print("[!] Only stemming and stopwords")
-	# a = main1(True)
-	# print("[!] Only stemming and stopwords + Bigrams")
-	# b = main2(True)
-	# print("[!] Only stemming and stopwords + Adavanced detection!")
-	# c = main3(True)
+	trainfile = str(sys.argv[1]) # train file
+	testfile = str(sys.argv[2]) # test file
+	part_num = str(sys.argv[3]) # part number
 
-	# print("\n\n[whole dataset]\n\n")
-
-	# m = max(a, b, c)
-	# if m==a:
-	# 	print("\nword\n")
-	# 	process1 = Preprocess('./dataset/train_full.json', True, stem=True, stopwords=True, feature_technique="word")
-	# 	process2 = Preprocess('./dataset/test.json', True, stem=True, stopwords=True, feature_technique="word")
-		
-	# 	# fit model for naive bayes
-	# 	model = NaiveBayes(process1, True)
-	# 	model.fit(process1.data)
-
-	# 	# predict on test data
-	# 	predicted_labels = model.predict(process2.data, text_normalised=True)
-
-	# 	# get accuracy
-	# 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
-	# 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
-
-	# 	model.f1_score(process2.data["label"], predicted_labels)	
-
-	# elif m==b:
-	# 	print("\nbigram\n")
-	# 	process1 = Preprocess('./dataset/train_full.json', True, stem=True, stopwords=True, feature_technique="bigram")
-	# 	process2 = Preprocess('./dataset/test.json', True, stem=True, stopwords=True, feature_technique="bigram")
-		
-	# 	# fit model for naive bayes
-	# 	model = NaiveBayes(process1, True)
-	# 	model.fit(process1.data)
-
-	# 	# predict on test data
-	# 	predicted_labels = model.predict(process2.data, text_normalised=True)
-
-	# 	# get accuracy
-	# 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
-	# 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
-
-	# 	model.f1_score(process2.data["label"], predicted_labels)	
-
-	# elif m==c:
-	# 	print("\nadvanced\n")
-	# 	process1 = Preprocess('./dataset/train_full.json', True, stem=True, stopwords=True, feature_technique="advanced")
-	# 	process2 = Preprocess('./dataset/test.json', True, stem=True, stopwords=True, feature_technique="advanced")
-		
-	# 	# fit model for naive bayes
-	# 	model = NaiveBayes(process1, True)
-	# 	model.fit(process1.data)
-
-	# 	# predict on test data
-	# 	predicted_labels = model.predict(process2.data, text_normalised=True)
-
-	# 	# get accuracy
-	# 	accuracy = float(sum([1 for i in range(len(predicted_labels)) if predicted_labels[i] == process2.data["label"][i]])) / float(len(predicted_labels))
-	# 	print("[*] Accuracy on test set: {0:.4f}".format(accuracy))
-
-	# 	model.f1_score(process2.data["label"], predicted_labels)	
-
+	if part_num.lower() == "a":
+		print("[*] Part-a | Naive Baye!")
+		main_a(False, trainfile, testfile)
+	elif part_num.lower() == "b":
+		print("[*] Part-b | Prediction Random and Majority!")
+		main_b(False, trainfile, testfile)
+	elif part_num.lower() == "c":
+		print("[*] Part-c | Draw Confusion Matrix!")
+		main_c(False, trainfile, testfile)
+	elif part_num.lower() == "d":
+		print("[*] Part-d | Remove stem and stopwords!")
+		main_d(False, trainfile, testfile)
+	elif part_num.lower() == "e":
+		print("[*] Part-e | 2 Alternative fetaure technique!")
+		main_e(False, trainfile, testfile)
+		main_e_2(False, trainfile, testfile)
+	elif part_num.lower() == "f":
+		print("[*] Part-f | F score!")
+		main_f(False, trainfile, testfile)
+	elif part_num.lower() == "g":
+		print("[*] Part-g | [!] Big Data!")
+		main_g(False, trainfile, testfile)
+	else:
+		print("[!] Wrong Part Number [!]")

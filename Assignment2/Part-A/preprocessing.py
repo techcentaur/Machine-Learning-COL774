@@ -17,7 +17,7 @@ from utils import json_reader, getStemmedDocuments
 class Preprocess:
 	"""get preprocessed data as data{"text":[], "label":[]}"""
 
-	def __init__(self, file_path, verbose=False, stem=False, stopwords=False, feature_technique="word"):
+	def __init__(self, file_path, verbose=False, stem=False, stopwords=False, feature_technique="normal"):
 		self.verbose = verbose
 		self.stem = stem
 		self.stopwords = stopwords
@@ -30,7 +30,7 @@ class Preprocess:
 		# with click.progressbar(range(len(raw_data))) as progressbar:
 		i = 0
 		while True:
-			# i += 1
+			i += 1
 			try:
 				raw_datum = next(iter_over_data)
 				# print("[!]")
@@ -41,8 +41,9 @@ class Preprocess:
 			self.data["text"].append(self.normalise_data(raw_datum["text"]))
 			self.data["label"].append(int(raw_datum["stars"]))
 
-			# if i>1000:
-			# 	break
+			# print(i)
+			if i>20:
+				break
 
 		self.num_examples = len(self.data["text"])
 		
