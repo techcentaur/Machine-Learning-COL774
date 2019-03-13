@@ -1,6 +1,7 @@
 """Preprocessing for SVM"""
 
 import csv
+import random
 import pandas as pd
 import numpy as np
 
@@ -24,6 +25,7 @@ class Processing:
 		data = {"data": [], "label":[]}
 		df = pd.read_csv(self.train_file)
 
+		i =0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -32,7 +34,11 @@ class Processing:
 
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(1)
+			i+=1
+			if i>100:
+				break
 
+		i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -41,10 +47,15 @@ class Processing:
 
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(-1)
+			i+=1
+			if i>50:
+				break
 
 		# set data (train data)
 		self.data = data
 		# print(len(self.data["data"]))
+		self.label1 = label1
+		self.label2 = label2
 
 	def process_test_data(self):
 		"""Binary Classification"""
@@ -57,6 +68,7 @@ class Processing:
 		testdata = {"data": [], "label":[]}
 		df = pd.read_csv(self.test_file)
 
+		i=0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -65,7 +77,11 @@ class Processing:
 
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(label1)
+			i+=1
+			if i>10:
+				break
 
+		i=0
 		for index, rows in df.iterrows():
 			l = list(rows)
 
@@ -74,6 +90,9 @@ class Processing:
 
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(label2)
+			i+=1
+			if i>10:
+				break
 
 		# set data (train data)
 		self.testdata = testdata
@@ -99,7 +118,7 @@ class Processing:
 
 
 class ProcessingForMulti:
-	def __init__(self, train_file, test_file):
+	def __init__(self, train_file, test_file, validation=False):
 		self.train_file = train_file
 		self.test_file = test_file
 
@@ -107,6 +126,9 @@ class ProcessingForMulti:
 		self.process_test_data()
 
 		print("[*] Processing data for multi-class classification!")
+
+		if validation:
+			self.get_validation_data()
 
 	def process_data(self):
 		max_pixel = 255
@@ -120,7 +142,7 @@ class ProcessingForMulti:
 			data["data"].append([(x/max_pixel) for x in l[:-1]])
 			data["label"].append(l[784])
 			i+=1
-			if i>100:
+			if i>50:
 				break
 
 		data["data"] = np.array(data["data"])
@@ -134,17 +156,31 @@ class ProcessingForMulti:
 		testdata = {"data": [], "label":[]}
 		df = pd.read_csv(self.test_file)
 
-		# i = 0
+		i = 0
 		for index, rows in df.iterrows():
 			l = list(rows)
 			testdata["data"].append([(x/max_pixel) for x in l[:-1]])
 			testdata["label"].append(l[784])
-			# i+=1
+			i+=1
+			if i>5:
+				break
 
 		testdata["data"] = np.array(testdata["data"])
 		testdata["label"] =  np.array(testdata["label"])
 
 		self.testdata = testdata
+
+	def get_validation_data(self, ratio=0.1):
+		"""randomly sampled ratio percent of training data"""
+
+		num = int(len(self.data["data"])*ratio)
+		idxs = np.random.choice(np.arange(len(self.data["data"])), num, replace=False)
+
+		self.validationdata = {"data": [], "label":[]}
+		self.validationdata["data"] = self.data["data"][idxs]
+		self.validationdata["label"] = self.data["label"][idxs]
+
+		print("[!] Validation data examples: {}".format(len(self.validationdata["data"])))
 
 
 if __name__ == '__main__':
