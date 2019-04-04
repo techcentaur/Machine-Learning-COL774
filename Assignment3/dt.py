@@ -43,6 +43,10 @@ class Node:
 
 		return represent
 
+	def have_children(self):
+		if(len(self.children) == 0):
+			return False
+		return True
 
 class BuildTree:
 	"""Build Decision Tree"""
@@ -142,11 +146,37 @@ class BuildTree:
 
 		return root
 
+def _pred(node, X_1):
+	# if no children - return label of node
+	if not node.have_children:
+		return node.label
+	else:
+		required_childs = []
+		# get child which has splitted feature
+		for child in node.children:
+			if child.splitted_feature_value == X_1[node.i_am_splitting_by_feature]:
+				required_childs.append(child)
 
-def accuracy(node, testX, testY):
+		# if no child: return max label
+		if(len(required_childs)==0):
+			_label = max(node.labels_counter.iteritems(), key=operator.itemgetter(1))[0]
+			return _label
+
+		# else: recursively go in the child
+		return _pred(required_childs[0], X_1)
+
+
+
+def predict_accuracy(testX, testY, node):
 	"""predict accuracy using node on testX with testY"""
 
-	for i in range(len(testX)):
+	correctly_predicted = 0
+	for example in range(len(testX)):
+		if(_pred(node, testX.iloc[example])) == (testY.iloc[example]):
+			correctly_predicted += 1
+
+	return float(correctly_predicted)/len(testY)
+
 
 
 def main(part):
@@ -164,6 +194,7 @@ def main(part):
 
 	if part.lower() =="a":
 		# part - a
+		print("[#] Part-A:")
 
 		continous_values_to_boolean(X_t)
 		print("[>] Working with {} columns\n".format(len(list(X_t.columns))))
@@ -171,7 +202,8 @@ def main(part):
 		dt = BuildTree(count=1) # root at 1
 		dt.make_decision_tree(X_t, Y_t, Node(), list(X_t.columns))
 
-		print("[*] Decision Tree Built:\n")
+		print("[>] Decision Tree Built:\n")
 		print("[.] Nodes: {}\n".format(dt.count))
 		print("[.] Root-Node: {}\n".format(repr(dt.root)))
 
+		predict_accuracy(X_t, Y_t, df.root)
