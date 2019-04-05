@@ -119,23 +119,162 @@ class BuildTree:
 
 
 	def __make_decision_tree__(self, X, Y, root, features):
-		# print(features)
 		if self.are_all_labels_same(Y):
-			# print("Yes, all labels are same!\n")
 			leaf_node = root
 			leaf_node.label = Y.iloc[0] # if not work use list(set(Y))[0]
 			leaf_node.label_counts = Counter(list(Y))
 			return leaf_node
 
 		if len(features) == 0:
-			# print("empty")
 			return self.best_label_available(Y, root)
 
-		# print("len of feats: {}".format(len(features)))
-		# print(X)
-		# print(Y)
-		# find the best feature with the max informational gain
-		# print("[>] get best feature")
+		best = self.get_best_feature(X, Y, features)
+
+		if best["gain"] == 0:
+			return self.best_label_available(Y, root)
+
+		root.i_am_splitting_by_feature = best["feature"]
+		root.label_counts = Counter(list(Y))
+
+		for val in set(X[best["feature"]]):
+			sub_part_X = X[X[best["feature"]] == val]
+			sub_part_Y = Y[X[best["feature"]] == val]
+			self.count += 1
+			# print(self.count)
+			try:
+				child = Node()
+			except Exception as e:
+				print("[!] Couldn't create child node {}".format(str(e)))
+				
+			child.parent = root
+			child.splitted_feature_value = val
+			root.children.append(child)
+
+			features_remaining = list(features)
+			features_remaining.remove(best["feature"])
+
+			self.__make_decision_tree__(sub_part_X, sub_part_Y, child, features_remaining)
+
+		return root
+
+	def _pred(self, node, X_1):
+		# if no children - return label of node
+		if not node.have_children:
+			return node.label
+		else:
+			required_childs = []
+			# get child which has splitted feature
+			for child in node.children:
+				if child.splitted_feature_value == X_1[node.i_am_splitting_by_feature]:
+					required_childs.append(child)
+
+			# if no child: return max label
+			if(len(required_childs)==0):
+				_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
+				return _label
+
+			# else: recursively go in the child
+			return self._pred(required_childs[0], X_1)
+
+
+	def predict_accuracy(self, testX, testY, node):
+		"""predict accuracy using node on testX with testY"""
+
+		correctly_predicted = 0
+		for example in range(len(testX)):
+			if(self._pred(node, testX.iloc[example])) == (testY.iloc[example]):
+				correctly_predicted += 1
+
+		return float(correctly_predicted)/len(testY)
+
+
+class BuildTreeWhileP:
+	"""Build Decision Tree with processing during
+	And repeatition is allowed in splitting the node
+	"""
+
+	def __init__(self, count, cont):
+		self.count = count
+		self.base_node = None
+		self.continous_data = cont
+
+	@staticmethod
+	def best_label_available(Y, node):
+		"""fill the node with the best label in Y"""
+
+		labels_counter = Counter(list(Y))
+		label = max(labels_counter.items(), key=operator.itemgetter(1))[0]
+		
+		node.label = label
+		node.label_counts = labels_counter
+		return node
+
+	@staticmethod
+	def entropy(of_list):
+		"""get entropy of list"""
+
+		labels_counter = Counter(list(of_list))
+		_sum = 0
+		for key in labels_counter:
+			if labels_counter[key] != 0:
+				x = float(labels_counter[key])/float(len(of_list))
+				_sum -= ((x)*(log(x, 2)))
+		return _sum
+
+	def information_gain(self, X, Y, feat):
+		"""get info gain when breaking at feat"""
+
+		if feat in self.continous_data:
+			H = self.entropy(Y)
+			med = X[feat].median()
+
+			part_Y1 = Y[X[feat].astype('float64') > med]
+			entropy_Y1 = self.entropy(part_Y1)
+			H = H - ((float(len(part_Y1))/float(len(X)))*(entropy_Y1))
+
+			part_Y2 = Y[X[feat].astype('float64') <= med]
+			entropy_Y2 = self.entropy(part_Y2)
+			H = H - ((float(len(part_Y2))/float(len(X)))*(entropy_Y2))			
+
+			return H
+		else:
+			H = self.entropy(Y)
+			m = len(X)
+			for label in set(X[feat]):
+				sub_labels = Y[X[feat]==label]
+				H = H - ((float(len(sub_labels))/float(m))*(self.entropy(sub_labels)))
+
+			return H
+
+	def get_best_feature(self, X, Y, features_list):
+		"""return best feature and gain by some heuristic: Information gain here"""
+
+		best = {"feature": None, "gain": 0}
+		for feat in features_list:
+			gain = self.information_gain(X, Y, feat)
+			if gain > best["gain"]:
+				best["gain"] = gain
+				best["feature"] = feat
+
+		return best
+
+	@staticmethod
+	def are_all_labels_same(Y):
+		return len(set(Y)) <= 1
+
+	def make_decision_tree(self, X, Y, root, features):
+		self.base_node = self.__make_decision_tree__(X, Y, root, features)
+
+	def __make_decision_tree__(self, X, Y, root, features):
+		if self.are_all_labels_same(Y):
+			leaf_node = root
+			leaf_node.label = Y.iloc[0] # if not work use list(set(Y))[0]
+			leaf_node.label_counts = Counter(list(Y))
+			return leaf_node
+
+		if len(features) == 0:
+			return self.best_label_available(Y, root)
+
 		best = self.get_best_feature(X, Y, features)
 		# print(best)
 
@@ -145,97 +284,138 @@ class BuildTree:
 
 		root.i_am_splitting_by_feature = best["feature"]
 		root.label_counts = Counter(list(Y))
-		# print(root)
-		# print(set(X[best["feature"]]))
-		# wait()
-		for val in set(X[best["feature"]]):
-			# print(set(X[best["feature"]]))
-			# print("Value", val)
-			sub_part_X = X[X[best["feature"]] == val]
-			sub_part_Y = Y[X[best["feature"]] == val]
-			# print(sub_part_X)
-			# print(sub_part_Y)
-			self.count += 1
-			# print(self.count)
-			# wait()
-			# continue
 
+		if best["feature"] in self.continous_data:
+			med = X[best["feature"]].median()
+			# ----break into 2 childs
+			# LEFT
 			try:
 				child = Node()
 			except Exception as e:
 				print("[!] Couldn't create child node {}".format(str(e)))
-				
+			self.count += 1
+
+			child.splitted_feature_value = med
 			child.parent = root
-			child.splitted_feature_value = val
 			root.children.append(child)
-			# print(child)
-			# wait()
-			# continue
-			# print(child.parent)
-			# break
-			# print(list(features))
+
 			features_remaining = list(features)
-			features_remaining.remove(best["feature"])
-			# print(features_remaining)
+			# features_remaining.remove(best["feature"])
+
+			sub_part_X = X[X[best["feature"]].astype('float64') <= med]
+			sub_part_Y = Y[X[best["feature"]].astype('float64') <= med]
 			self.__make_decision_tree__(sub_part_X, sub_part_Y, child, features_remaining)
 
-		# wait()
+			# RIGHT
+			try:
+				child = Node()
+			except Exception as e:
+				print("[!] Couldn't create child node {}".format(str(e)))
+			self.count += 1
+
+			child.splitted_feature_value = med
+			child.parent = root
+			root.children.append(child)
+
+			features_remaining = list(features)
+			# features_remaining.remove(best["feature"])
+
+			sub_part_X = X[X[best["feature"]].astype('float64') > med]
+			sub_part_Y = Y[X[best["feature"]].astype('float64') > med]
+			self.__make_decision_tree__(sub_part_X, sub_part_Y, child, features_remaining)
+
+		else:
+			for val in set(X[best["feature"]]):
+				sub_part_X = X[X[best["feature"]] == val]
+				sub_part_Y = Y[X[best["feature"]] == val]
+				self.count += 1
+				# print(self.count)
+				try:
+					child = Node()
+				except Exception as e:
+					print("[!] Couldn't create child node {}".format(str(e)))
+					
+				child.splitted_feature_value = val
+				child.parent = root
+				root.children.append(child)
+
+				features_remaining = list(features)
+				features_remaining.remove(best["feature"])
+
+				self.__make_decision_tree__(sub_part_X, sub_part_Y, child, features_remaining)
+
 		return root
 
-def _pred(node, X_1):
-	# if no children - return label of node
-	if not node.have_children:
-		return node.label
-	else:
-		required_childs = []
-		# get child which has splitted feature
-		for child in node.children:
-			if child.splitted_feature_value == X_1[node.i_am_splitting_by_feature]:
-				required_childs.append(child)
+	def _pred(self, node, X_1):
+		# if no children - return label of node
+		if not node.have_children:
+			return node.label
+		else:
+			required_childs = []
+			# get child which has splitted feature
+			if node.i_am_splitting_by_feature in self.continous_data:
+				med = node.children[0].splitted_feature_value
+				try:
+					if X_1[node.i_am_splitting_by_feature].astype(float64) <= med:
+						required_childs.append(node.children[0])
+					else:
+						required_childs.append(node.children[1])
+				except Exception as e:
+					_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
+					return _label
 
-		# if no child: return max label
-		if(len(required_childs)==0):
-			_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
-			return _label
+			else:
+				for child in node.children:
+					if child.splitted_feature_value == X_1[node.i_am_splitting_by_feature]:
+						required_childs.append(child)
 
-		# else: recursively go in the child
-		return _pred(required_childs[0], X_1)
+			# if no child: return max label
+			if(len(required_childs)==0):
+				_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
+				return _label
+
+			# else: recursively go in the child
+			return self._pred(required_childs[0], X_1)
 
 
+	def predict_accuracy(self, testX, testY, node):
+		"""predict accuracy using node on testX with testY"""
 
-def predict_accuracy(testX, testY, node):
-	"""predict accuracy using node on testX with testY"""
+		correctly_predicted = 0
+		for example in range(len(testX)):
+			if(self._pred(node, testX.iloc[example])) == (testY.iloc[example]):
+				correctly_predicted += 1
 
-	correctly_predicted = 0
-	for example in range(len(testX)):
-		if(_pred(node, testX.iloc[example])) == (testY.iloc[example]):
-			correctly_predicted += 1
+		return float(correctly_predicted)/len(testY)
 
-	return float(correctly_predicted)/len(testY)
 
 def wait():
 	while True:
 		pass
 
-
 # Hold my beer while I write all these helper functions
 def breadth_first_search(node):
-	nodes_list = []
+	"""HMB while I do breadth first search"""
+
 	tmplist = []
 	tmplist.append(node)
+	num_nodes=1
+	nodes_list = []
 
-	while len(tmplist) != 0:
+	while num_nodes != 0:
 		tmp = tmplist.pop(0)
+		num_nodes -= 1
 		nodes_list.append(tmp)
+
 		for child in tmp.children:
 			tmplist.append(child)
+			num_nodes += 1
 
-	# print(nodes_list)
-	nodes_list.reverse() #from leafs to root
+	nodes_list.reverse()
 	return nodes_list
 
 
-def plot(base_node, data):
+def plot(base_node, data, part_name="a"):
 	nodes_list = breadth_first_search(base_node)
 	print("[*] BFS done! Got list of nodes\n")
 	# indexed_node_list = [x for x in range(1, len(nodes_list)+1)]
@@ -266,14 +446,13 @@ def plot(base_node, data):
 	plt.ylabel('Accuracies')
 	ax.set_ylim(bottom=0)
 
-	plt.savefig('plot_part_a.png')
+	plt.savefig('plot_part_{}.png'.format(str(part_name)))
 
 def this_is_not_my_daddy_remove_it(node):
-	if node.parent is None:
-		return
-	else:
+	if not node.parent is None:
 		node.parent.children.remove(node)
 		return node.parent
+	return
 
 def this_is_my_daddy(daddy, node):
 	daddy.children.append(node)
@@ -319,11 +498,11 @@ def main(part):
 		print("[>] Nodes: {}".format(dt.count))
 		print("[>] Root-Node: {}\n".format(dt.base_node))
 
-		accuracy = predict_accuracy(X_T, Y_T, dt.base_node)
+		accuracy = dt.predict_accuracy(X_T, Y_T, dt.base_node)
 		print("[*] Accuracy Train: {}".format(accuracy))
-		accuracy = predict_accuracy(X_t, Y_t, dt.base_node)
+		accuracy = dt.predict_accuracy(X_t, Y_t, dt.base_node)
 		print("[*] Accuracy Test: {}".format(accuracy))
-		accuracy = predict_accuracy(X_v, Y_v, dt.base_node)
+		accuracy = dt.predict_accuracy(X_v, Y_v, dt.base_node)
 		print("[*] Accuracy Validation: {}".format(accuracy))
 
 		print("[*] Time taken: {}\n".format(time.time()-start))
@@ -353,9 +532,9 @@ def main(part):
 		print("\n[>] DECISION TREE BUILT:")
 		print("[>] Nodes: {}".format(dt.count))
 
-		oldaccuracy1 = predict_accuracy(X_T, Y_T, dt.base_node)
-		oldaccuracy2 = predict_accuracy(X_t, Y_t, dt.base_node)
-		oldaccuracy3 = predict_accuracy(X_v, Y_v, dt.base_node)
+		oldaccuracy1 = dt.predict_accuracy(X_T, Y_T, dt.base_node)
+		oldaccuracy2 = dt.predict_accuracy(X_t, Y_t, dt.base_node)
+		oldaccuracy3 = dt.predict_accuracy(X_v, Y_v, dt.base_node)
 
 		acc_val = predict_accuracy(X_v, Y_v, dt.base_node)
 
@@ -378,11 +557,11 @@ def main(part):
 		print("[*] Pruning Complete!")
 		print("[!] Deleted nodes {}".format(nodes_deleted))
 
-		accuracy = predict_accuracy(X_T, Y_T, dt.base_node)
+		accuracy = dt.predict_accuracy(X_T, Y_T, dt.base_node)
 		print("[*] Accuracy Train: {i1} | Diff after pruning: {i2}".format(i1=round(accuracy, 5), i2=round(accuracy-oldaccuracy1, 5)))
-		accuracy = predict_accuracy(X_t, Y_t, dt.base_node)
+		accuracy = dt.predict_accuracy(X_t, Y_t, dt.base_node)
 		print("[*] Accuracy Test: {i1} | Diff after pruning: {i2}".format(i1=round(accuracy, 5), i2=round(accuracy-oldaccuracy2, 5)))
-		accuracy = predict_accuracy(X_v, Y_v, dt.base_node)
+		accuracy = dt.predict_accuracy(X_v, Y_v, dt.base_node)
 		print("[*] Accuracy Validation: {i1} | Diff after pruning: {i2}".format(i1=round(accuracy, 5), i2=round(accuracy-oldaccuracy3, 5)))
 
 		print("[*] Time taken: {}\n".format(time.time()-start))
@@ -397,7 +576,39 @@ def main(part):
 		}
 		# plot(dt.base_node, data)
 
+	if part.lower() =="c":
+		print("[#] Part-C | Pre-processing whilst building the tree")
 
+		# continous numerical data columns
+		continous_data = ['X1', 'X5', 'X12', 'X13', 'X14', 'X15', 'X16', 'X17', 'X18', 'X19', 'X20', 'X21', 'X22', 'X23']
+
+		dt = BuildTreeWhileP(count=1, cont=continous_data) # root at 1
+		dt.make_decision_tree(X_T, Y_T, Node(), list(X_T.columns))
+
+		print("\n[>] DECISION TREE BUILT:")
+		print("[>] Nodes: {}".format(dt.count))
+		print("[>] Root-Node: {}\n".format(dt.base_node))
+
+		accuracy = dt.predict_accuracy(X_T, Y_T, dt.base_node)
+		print("[*] Accuracy Train: {}".format(accuracy))
+		accuracy = dt.predict_accuracy(X_t, Y_t, dt.base_node)
+		print("[*] Accuracy Test: {}".format(accuracy))
+		accuracy = dt.predict_accuracy(X_v, Y_v, dt.base_node)
+		print("[*] Accuracy Validation: {}".format(accuracy))
+
+		print("[*] Time taken: {}\n".format(time.time()-start))
+		wait()
+
+		data = {
+			"X_train": X_T,
+			"Y_train": Y_T,
+			"X_test": X_t,
+			"Y_test": Y_t,
+			"X_val": X_v,
+			"Y_val": Y_v
+		}
+
+		# plot(dt.base_node, data)
 
 if __name__ == '__main__':
 	# args
