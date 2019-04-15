@@ -1,7 +1,11 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 Assignment2/Part-B/dataset/
-Assignment1/Part-A/dataset/
+Assignment2/Part-A/dataset/
+Assignment2/Part-B/SVM-python/
+Assignment3/dataset/
+Assignment4/data/
+
 *.py[cod]
 *$py.class
 

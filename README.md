@@ -9,5 +9,11 @@ Machine Learning Assignments of the course COL774
 
 ## Assignment-2:
 	- Text Classification Using Naive Bayes
+	- MNIST Digit Classification using SVM
 
-n
+## Assignment-3:
+	- Decision Trees and Random Forests
+	- Neural Networks
+
+## Assignment-4:
+	- Some shit about PCA (Will write it later)
