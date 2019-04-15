@@ -11,22 +11,41 @@ from collections import Counter
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
 
+# my modules
+from helper_tree import (get_nodes_stats_depth_wise, breadth_first_search, wait)
 
 # find median and categorise continous variables
-def continous_values_to_boolean(df):
-	"""classify by median"""
 
-	cont_var_list = ['X1', 'X5', 'X12', 'X13', 'X14', 'X15', 'X16', 'X17', 'X18', 'X19', 'X20', 'X21', 'X22', 'X23']
-	# cont_var_list = ['X1', 'X5']
+class ToBoolean:
+	def __init__(self):
+		"""Init: categorical attribute names"""
 
-	# print(df['X1'])
-	for col in cont_var_list:
-		if col in list(df.columns):
-			median = df[col].median()
-			df.loc[df[col].astype('float64') <= median, col] = 0
-			df.loc[df[col].astype('float64') > median, col] = 1
-			# changed in dataframe (no return)
+		self.cont_var_list = ['X1', 'X5', 'X12', 'X13', 'X14', 'X15', 'X16', 'X17', 'X18', 'X19', 'X20', 'X21', 'X22', 'X23']
+		self.medians_cats = {}
+
+	def continous_data_by_calculating_medians(self, df):
+		"""classify by calculating median"""
+
+		for col in self.cont_var_list:
+			if col in list(df.columns):
+				median = df[col].median()
+
+				self.medians_cats[col] = median
+				df.loc[df[col].astype('float64') <= median, col] = 0
+				df.loc[df[col].astype('float64') > median, col] = 1
+
+	def continous_data_with_already_calculated_medians(self, df):
+		"""classify by already calculated medians"""
+
+		for col in self.cont_var_list:
+			if col in list(df.columns):
+				median = self.medians_cats[col]
+
+				df.loc[df[col].astype('float64') <= median, col] = 0
+				df.loc[df[col].astype('float64') > median, col] = 1
+
 
 class Node:
 	"""One Node in Decision Tree"""
@@ -54,6 +73,10 @@ class Node:
 
 	def have_children(self):
 		return len(self.children) != 0
+
+	def get_max_labels(self):
+		label = max(self.label_counts.items(), key=operator.itemgetter(1))[0]
+		return label
 
 class BuildTree:
 	"""Build Decision Tree"""
@@ -121,7 +144,7 @@ class BuildTree:
 	def __make_decision_tree__(self, X, Y, root, features):
 		if self.are_all_labels_same(Y):
 			leaf_node = root
-			leaf_node.label = Y.iloc[0] # if not work use list(set(Y))[0]
+			leaf_node.label = list(set(Y))[0] # if not work use list(set(Y))[0]
 			leaf_node.label_counts = Counter(list(Y))
 			return leaf_node
 
@@ -159,8 +182,8 @@ class BuildTree:
 
 	def _pred(self, node, X_1):
 		# if no children - return label of node
-		if not node.have_children:
-			return node.label
+		if not node.have_children():
+			return node.get_max_labels()
 		else:
 			required_childs = []
 			# get child which has splitted feature
@@ -188,6 +211,38 @@ class BuildTree:
 		return float(correctly_predicted)/len(testY)
 
 
+	def _pred_with_depth(self, node, X_1, depth):
+		# if no children - return label of node
+		if (not node.have_children()) or (depth == 0):
+			return node.get_max_labels()
+		else:
+			required_childs = []
+			# get child which has splitted feature
+			for child in node.children:
+				if child.splitted_feature_value == X_1[node.i_am_splitting_by_feature]:
+					required_childs.append(child)
+
+			# if no child: return max label
+			if(len(required_childs)==0):
+				_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
+				return _label
+
+			# else: recursively go in the child
+			return self._pred_with_depth(required_childs[0], X_1, depth-1)
+
+
+	def predict_accuracy_with_depth(self, testX, testY, node, depth=0):
+		"""predict accuracy using node on testX with testY"""
+
+		correctly_predicted = 0
+		for example in range(len(testX)):
+			if(self._pred_with_depth(node, testX.iloc[example], depth)) == (testY.iloc[example]):
+				correctly_predicted += 1
+
+		return float(correctly_predicted)/len(testY)
+
+
+
 class BuildTreeWhileP:
 	"""Build Decision Tree with processing during
 	And repeatition is allowed in splitting the node
@@ -197,6 +252,9 @@ class BuildTreeWhileP:
 		self.count = count
 		self.base_node = None
 		self.continous_data = cont
+		self.report_numerical_data = {}
+		for c in self.continous_data:
+			self.report_numerical_data[c] = []
 
 	@staticmethod
 	def best_label_available(Y, node):
@@ -287,6 +345,8 @@ class BuildTreeWhileP:
 
 		if best["feature"] in self.continous_data:
 			med = X[best["feature"]].median()
+
+			self.report_numerical_data[best["feature"]].append(med)
 			# ----break into 2 childs
 			# LEFT
 			try:
@@ -348,8 +408,8 @@ class BuildTreeWhileP:
 
 	def _pred(self, node, X_1):
 		# if no children - return label of node
-		if not node.have_children:
-			return node.label
+		if not node.have_children():
+			return node.get_max_labels()
 		else:
 			required_childs = []
 			# get child which has splitted feature
@@ -389,51 +449,65 @@ class BuildTreeWhileP:
 		return float(correctly_predicted)/len(testY)
 
 
-def wait():
-	while True:
-		pass
+	def _pred_with_depth(self, node, X_1, depth):
+		# if no children - return label of node
+		if (not node.have_children()) or (depth == 0):
+			return node.get_max_labels()
+		else:
+			required_childs = []
+			# get child which has splitted feature
+			if node.i_am_splitting_by_feature in self.continous_data:
+				med = node.children[0].splitted_feature_value
+				try:
+					if X_1[node.i_am_splitting_by_feature].astype(float64) <= med:
+						required_childs.append(node.children[0])
+					else:
+						required_childs.append(node.children[1])
+				except Exception as e:
+					_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
+					return _label
 
-# Hold my beer while I write all these helper functions
-def breadth_first_search(node):
-	"""HMB while I do breadth first search"""
+			else:
+				for child in node.children:
+					if child.splitted_feature_value == X_1[node.i_am_splitting_by_feature]:
+						required_childs.append(child)
 
-	tmplist = []
-	tmplist.append(node)
-	num_nodes=1
-	nodes_list = []
+			# if no child: return max label
+			if(len(required_childs)==0):
+				_label = max(node.label_counts.items(), key=operator.itemgetter(1))[0]
+				return _label
 
-	while num_nodes != 0:
-		tmp = tmplist.pop(0)
-		num_nodes -= 1
-		nodes_list.append(tmp)
-
-		for child in tmp.children:
-			tmplist.append(child)
-			num_nodes += 1
-
-	nodes_list.reverse()
-	return nodes_list
+			# else: recursively go in the child
+			return self._pred_with_depth(required_childs[0], X_1, depth-1)
 
 
-def plot(base_node, data, part_name="a"):
-	nodes_list = breadth_first_search(base_node)
-	print("[*] BFS done! Got list of nodes\n")
-	# indexed_node_list = [x for x in range(1, len(nodes_list)+1)]
+	def predict_accuracy_with_depth(self, testX, testY, node, depth):
+		"""predict accuracy using node on testX with testY"""
 
-	print("[.] Plotting {} points!\n".format(int(len(nodes_list)/500)))
-	# random.shuffle(indexed_node_list)
-	
+		correctly_predicted = 0
+		for example in range(len(testX)):
+			if(self._pred_with_depth(node, testX.iloc[example], depth)) == (testY.iloc[example]):
+				correctly_predicted += 1
+
+		return float(correctly_predicted)/len(testY)
+
+
+def plot(dt, data, part_name, nodes_stats):
+	"""hold my beer while I plot all these shitty data"""
+
 	accuracies = {"node": [], "train": [], "test":[], "val":[]}
-	for index in range(1, len(nodes_list), 500):
-		accuracies["train"].append(predict_accuracy(data["X_train"], data["Y_train"], nodes_list[index]))
-		accuracies["test"].append(predict_accuracy(data["X_test"], data["Y_test"], nodes_list[index]))
-		accuracies["val"].append(predict_accuracy(data["X_val"], data["Y_val"], nodes_list[index]))
-		accuracies["node"].append(index)
 
-	for key in accuracies:
-		accuracies[key].reverse()
-	
-	print("[.] Accuracies per node calculated!\n")
+	for depth in nodes_stats:
+
+		acc1 = dt.predict_accuracy_with_depth(data["X_train"], data["Y_train"], dt.base_node, depth)
+		acc2 = dt.predict_accuracy_with_depth(data["X_test"], data["Y_test"], dt.base_node, depth)
+		acc3 = dt.predict_accuracy_with_depth(data["X_val"], data["Y_val"], dt.base_node, depth)
+
+		accuracies["node"].append(nodes_stats[depth])
+		accuracies["train"].append(acc1)
+		accuracies["test"].append(acc2)
+		accuracies["val"].append(acc3)
+
 	# plot my horses
 	fig, ax = plt.subplots(figsize=(12, 12)) 
 	# plt.figure()
@@ -446,7 +520,9 @@ def plot(base_node, data, part_name="a"):
 	plt.ylabel('Accuracies')
 	ax.set_ylim(bottom=0)
 
-	plt.savefig('plot_part_{}.png'.format(str(part_name)))
+	plt.savefig('plot_part_{}_.png'.format(str(part_name)))
+	print("[*] Saved figure with name: plot_part_{}.png".format(str(part_name)))
+
 
 def this_is_not_my_daddy_remove_it(node):
 	if not node.parent is None:
@@ -458,39 +534,86 @@ def this_is_my_daddy(daddy, node):
 	daddy.children.append(node)
 	return True
 
-def main(part):
-	data = pd.read_csv("./dataset/credit-cards.train.csv")
+
+def convert_into_one_hot_encoding(df):
+	categorical_cols = ['X3','X4','X6','X7','X8','X9','X10','X11']
+
+	# print(df.columns)
+	for a in list(df.columns):
+		tmp = df[a]
+		del df[a]
+		if a in categorical_cols:
+			if a == 'X3':
+				arr = tmp.values
+				tttmp = []
+				for i in arr:
+					ttmp = [0]*7
+					ttmp[int(i)] = 1
+					tttmp.append(ttmp)
+				tttmp = np.array(tttmp)
+				for i in range(len(tttmp.T)):
+					df[a+str(i)] = tttmp.T[i]
+			elif a == 'X4':
+				arr = tmp.values
+				tttmp = []
+				for i in arr:
+					ttmp = [0]*4
+					ttmp[int(i)] = 1
+					tttmp.append(ttmp)
+				tttmp = np.array(tttmp)
+				for i in range(len(tttmp.T)):
+					df[a+str(i)] = tttmp.T[i]
+			else:
+				arr = tmp.values
+				tttmp = []
+				for i in arr:
+					ttmp = [0]*12
+					ttmp[(int(i)+2)] = 1
+					tttmp.append(ttmp)
+				tttmp = np.array(tttmp)
+				for i in range(len(tttmp.T)):
+					df[a+str(i)] = tttmp.T[i]
+		else:
+			df[a] = tmp
+	# print(df.columns)
+	return df
+
+
+
+def main(part, trainfp, testfp, valfp):
+	data = pd.read_csv(trainfp)
 	X_T = (data.drop("Y", 1))
-	X_T = X_T.iloc[1:50, 1:]
+	X_T = X_T.iloc[1:, 1:]
 	Y_T = (data["Y"])
-	Y_T = Y_T.iloc[1:50]
+	Y_T = Y_T.iloc[1:]
 	assert str(type(Y_T)) == "<class 'pandas.core.series.Series'>"
 
-	data = pd.read_csv("./dataset/credit-cards.test.csv")
+	data = pd.read_csv(testfp)
 	X_t = (data.drop("Y", 1))
-	X_t = X_t.iloc[1:50, 1:]
+	X_t = X_t.iloc[1:, 1:]
 	Y_t = (data["Y"])
-	Y_t = Y_t.iloc[1:50]
+	Y_t = Y_t.iloc[1:]
 	assert str(type(Y_t)) == "<class 'pandas.core.series.Series'>"
 
-	data = pd.read_csv("./dataset/credit-cards.val.csv")
+	data = pd.read_csv(valfp)
 	X_v = (data.drop("Y", 1))
-	X_v = X_v.iloc[1:50, 1:]
+	X_v = X_v.iloc[1:, 1:]
 	Y_v = (data["Y"])
-	Y_v = Y_v.iloc[1:50]
+	Y_v = Y_v.iloc[1:]
 	assert str(type(Y_v)) == "<class 'pandas.core.series.Series'>"
 
 
 	start = time.time()
-	if part.lower() =="a":
+	if part==1:
 		print("[#] Part-A:")
 
-		continous_values_to_boolean(X_T)
+		tb_object = ToBoolean()
+		tb_object.continous_data_by_calculating_medians(X_T)
+		tb_object.continous_data_with_already_calculated_medians(X_t)
+		tb_object.continous_data_with_already_calculated_medians(X_v)
 
 		print("[>] Working with {} columns\n".format(len(list(X_T.columns))))
 
-		# print(X_t)
-		# wait()
 		dt = BuildTree(count=1) # root at 1
 		dt.make_decision_tree(X_T, Y_T, Node(), list(X_T.columns))
 
@@ -507,6 +630,7 @@ def main(part):
 
 		print("[*] Time taken: {}\n".format(time.time()-start))
 
+		nodes_stats = get_nodes_stats_depth_wise(dt.base_node)
 		data = {
 			"X_train": X_T,
 			"Y_train": Y_T,
@@ -516,15 +640,16 @@ def main(part):
 			"Y_val": Y_v
 		}
 
-		# plot(dt.base_node, data)
+		plot(dt, data, part, nodes_stats)
 
-	elif part.lower() =="b":
+	elif part==2:
 		# hold my cosmo while I write the pruning part
 		print("[#] Part-B: Post-Pruning part")
 
-		continous_values_to_boolean(X_T)
-
-		print("[>] Working with {} columns\n".format(len(list(X_T.columns))))
+		tb_object = ToBoolean()
+		tb_object.continous_data_by_calculating_medians(X_T)
+		tb_object.continous_data_with_already_calculated_medians(X_t)
+		tb_object.continous_data_with_already_calculated_medians(X_v)
 
 		dt = BuildTree(count=1) # root at 1
 		dt.make_decision_tree(X_T, Y_T, Node(), list(X_T.columns))
@@ -532,25 +657,25 @@ def main(part):
 		print("\n[>] DECISION TREE BUILT:")
 		print("[>] Nodes: {}".format(dt.count))
 
-		oldaccuracy1 = dt.predict_accuracy(X_T, Y_T, dt.base_node)
-		oldaccuracy2 = dt.predict_accuracy(X_t, Y_t, dt.base_node)
-		oldaccuracy3 = dt.predict_accuracy(X_v, Y_v, dt.base_node)
-
-		acc_val = predict_accuracy(X_v, Y_v, dt.base_node)
+		tim1 = time.time()
+		acc_val = dt.predict_accuracy(X_v, Y_v, dt.base_node)
+		print("val time: ", time.time()-tim1)
 
 		print("[*] Pruning Start!")
 		nodes_deleted = 0
 		nodes_list = breadth_first_search(dt.base_node)
-		
+		nodes_list.reverse()
 		for node in nodes_list:
 			daddy = this_is_not_my_daddy_remove_it(node)
-			tmp_acc_val = predict_accuracy(X_v, Y_v, dt.base_node)
+			tmp_acc_val = dt.predict_accuracy(X_v, Y_v, dt.base_node)
 			
-			if tmp_acc_val > acc_val:
+			if tmp_acc_val >= acc_val:
 				nodes_deleted += 1
-				# print("[-] Accuracy difference: {}".format(tmp_acc_val - acc_val))
+				print("[-] New Accuracy: {}".format(tmp_acc_val))
 				acc_val = tmp_acc_val
 			else:
+				# if nodes_deleted>=40:
+				# 	break
 				if daddy is not None:
 					this_is_my_daddy(daddy, node)
 
@@ -558,14 +683,15 @@ def main(part):
 		print("[!] Deleted nodes {}".format(nodes_deleted))
 
 		accuracy = dt.predict_accuracy(X_T, Y_T, dt.base_node)
-		print("[*] Accuracy Train: {i1} | Diff after pruning: {i2}".format(i1=round(accuracy, 5), i2=round(accuracy-oldaccuracy1, 5)))
+		print("[*] Accuracy Train: {i1}".format(i1=accuracy))
 		accuracy = dt.predict_accuracy(X_t, Y_t, dt.base_node)
-		print("[*] Accuracy Test: {i1} | Diff after pruning: {i2}".format(i1=round(accuracy, 5), i2=round(accuracy-oldaccuracy2, 5)))
+		print("[*] Accuracy Test: {i1}".format(i1=accuracy))
 		accuracy = dt.predict_accuracy(X_v, Y_v, dt.base_node)
-		print("[*] Accuracy Validation: {i1} | Diff after pruning: {i2}".format(i1=round(accuracy, 5), i2=round(accuracy-oldaccuracy3, 5)))
+		print("[*] Accuracy Validation: {i1}".format(i1=accuracy))
 
 		print("[*] Time taken: {}\n".format(time.time()-start))
 
+		nodes_stats = get_nodes_stats_depth_wise(dt.base_node)
 		data = {
 			"X_train": X_T,
 			"Y_train": Y_T,
@@ -574,9 +700,10 @@ def main(part):
 			"X_val": X_v,
 			"Y_val": Y_v
 		}
-		# plot(dt.base_node, data)
 
-	if part.lower() =="c":
+		plot(dt, data, part, nodes_stats)
+
+	elif part==3:
 		print("[#] Part-C | Pre-processing whilst building the tree")
 
 		# continous numerical data columns
@@ -597,7 +724,7 @@ def main(part):
 		print("[*] Accuracy Validation: {}".format(accuracy))
 
 		print("[*] Time taken: {}\n".format(time.time()-start))
-		wait()
+		# wait()
 
 		data = {
 			"X_train": X_T,
@@ -608,11 +735,133 @@ def main(part):
 			"Y_val": Y_v
 		}
 
-		# plot(dt.base_node, data)
+		# print(dt.report_numerical_data)
+		nodes_stats = get_nodes_stats_depth_wise(dt.base_node)
+		plot(dt, data, part_name, nodes_stats)
+
+	elif part==4:
+		# validation set accuracy vs
+		# [min samples split, min samples leaf, max depth]
+		print("[#] Part-D | Using DecisionTreeClassifier")
+
+		from sklearn.tree import DecisionTreeClassifier
+
+		# _max_depth=[2,5,10,20,100,1000]
+		# _min_samples_leaf= [2,5,10,20,40,80,160,200,500,1000]
+		# _min_samples_split= [2,5,10,20,40,80,160,200,500,1000,2000,4000,6000]
+		# for i in _min_samples_leaf:
+		min_samples_split = 1000
+		min_samples_leaf = 10
+		max_depth = 5
+
+		print("[>] Min-samples-split: ", min_samples_split)
+		print("[>] Min-samples-leaf: ", min_samples_leaf)
+		print("[>] Max-depth: ", max_depth)
+
+		clf = DecisionTreeClassifier(criterion="entropy",
+									random_state=0,
+									max_depth=max_depth,
+									min_samples_split=min_samples_split,
+									min_samples_leaf=min_samples_leaf
+										)
+		clf.fit(X_T, Y_T)
+
+		accuracy = clf.score(X_T, Y_T)
+		print("[*] Accuracy Train: {}".format(accuracy))
+		accuracy = clf.score(X_t, Y_t)
+		print("[*] Accuracy Test: {}".format(accuracy))
+		accuracy = clf.score(X_v, Y_v)
+		print("[*] Accuracy Validation: {}\n".format(accuracy))
+
+		# print((clf.tree_).node_count)
+		# -----------------------changing parameters
+
+	elif part==5:
+		from sklearn.tree import DecisionTreeClassifier
+		print("[#] Part-E | Using One-hot encoding in categorical data")
+
+		X_T = convert_into_one_hot_encoding(X_T)
+		# wait()
+		X_t = convert_into_one_hot_encoding(X_t)
+		X_v = convert_into_one_hot_encoding(X_v)
+
+
+		min_samples_split = 1000
+		min_samples_leaf = 10
+		max_depth = 5
+
+		print("[>] Min-samples-split: ", min_samples_split)
+		print("[>] Min-samples-leaf: ", min_samples_leaf)
+		print("[>] Max-depth: ", max_depth)
+
+		clf = DecisionTreeClassifier(criterion="entropy",
+									random_state=0,
+									max_depth=max_depth,
+									min_samples_split=min_samples_split,
+									min_samples_leaf=min_samples_leaf
+										)
+		clf.fit(X_T, Y_T)
+
+		accuracy = clf.score(X_T, Y_T)
+		print("[*] Accuracy Train: {}".format(accuracy))
+		accuracy = clf.score(X_t, Y_t)
+		print("[*] Accuracy Test: {}".format(accuracy))
+		accuracy = clf.score(X_v, Y_v)
+		print("[*] Accuracy Validation: {}\n".format(accuracy))
+
+	elif part==6:
+		from sklearn.ensemble.forest import RandomForestClassifier
+
+		print("[#] Part-F | Random Forests Using One-hot encoding in categorical data")
+
+		X_T = convert_into_one_hot_encoding(X_T)
+		# wait()
+		X_t = convert_into_one_hot_encoding(X_t)
+		X_v = convert_into_one_hot_encoding(X_v)
+
+		# _n_estimators = [10, 20, 50, 80, 100, 150, 200, 500]
+		# _bootstrap = [True, False]
+		# _max_features = ['auto', 'log2', None, 1, 4, 8, 10, 15, 20]
+
+
+		# for i in _max_features:
+		n_estimators = 40
+		bootstrap = True
+		max_features = 'log2'
+
+		print("[>] N-estimators: ", n_estimators)
+		print("[>] Bootstrap: ", bootstrap)
+		print("[>] Max-features: ", max_features)
+
+
+		# n_estimators = 10
+		# bootstrap = True
+		# max_features = 'auto'
+
+		clf = RandomForestClassifier(criterion="entropy",
+									max_features=max_features,
+									n_estimators=n_estimators,
+									bootstrap=bootstrap
+										)
+		clf.fit(X_T, Y_T)
+
+		accuracy = clf.score(X_T, Y_T)
+		print("[*] Accuracy Train: {}".format(accuracy))
+		accuracy = clf.score(X_t, Y_t)
+		print("[*] Accuracy Test: {}".format(accuracy))
+		accuracy = clf.score(X_v, Y_v)
+		print("[*] Accuracy Validation: {}\n".format(accuracy))
+
 
 if __name__ == '__main__':
 	# args
 	import sys
-	part_name = sys.argv[1]
-	# print(part_name)
-	main(part_name)
+	part_name = int(sys.argv[1])
+	train_filepath = str(sys.argv[2])
+	test_filepath = str(sys.argv[3])
+	val_filepath = str(sys.argv[4])
+
+	# print(part_name, train_filepath, test_filepath, val_filepath)
+	main(part_name, train_filepath, test_filepath, val_filepath)
+
+
