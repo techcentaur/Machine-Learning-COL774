@@ -15,6 +15,7 @@ matplotlib.use('Agg')
 import seaborn as sns
 import matplotlib.pyplot as plt     
 
+
 class NaiveBayes:
 	def __init__(self, process, verbose=False):
 		self.process = process
