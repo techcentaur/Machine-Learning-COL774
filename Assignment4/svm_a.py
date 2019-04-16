@@ -13,7 +13,7 @@ class ModelSVM:
         }
 
     def fit(X, Y, verbose=False):
-        model = GridSearchCV(SVC(kernel=self.kernel, class_weighted=''),
+        model = GridSearchCV(SVC(kernel=self.kernel, class_weighted='balanced'),
                              params_grid,
                              cv=10)
         model = model.fit(X, Y)
@@ -29,3 +29,4 @@ class ModelSVM:
 
     def predict(X):
         return self.model.predict(X)
+
