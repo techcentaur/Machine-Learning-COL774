@@ -23,6 +23,8 @@ def wait():
 
 class Preprocessing:
     def __init__(self):
+    	self.n_components = 50
+    	 
         base_directory = "./data"
         self.episodes = sorted(glob.glob(base_directory + "/*"))
 
@@ -52,7 +54,7 @@ class Preprocessing:
             data = arr
             # print(data.shape)
             """ Apply PCA on all frames of a episode: (no-examples) X (210*160) """
-            pca = PCA(n_components=50)
+            pca = PCA(n_components=self.n_components)
             data = pca.fit_transform(data)
             # print(data.shape)
             # print(reward_info.shape)
